@@ -21,7 +21,7 @@ function getDesign(designName, width, heigth, girdX, gridY) {
     switch (designName) {
         case "template":
         default:
-            design.background = ["draw", "solid", "tb", width, heigth, ["#3a0700", "#000", "#001100", "#003300", "#000"]]; // type img/draw, draw solid/gradient, sizeX, sizeY, color
+            design.background = ["draw", "solid", width, heigth, ["#3a0700", "#000", "#001100", "#003300", "#000"]]; // type img/draw, draw solid/gradient_direction, sizeX, sizeY, color
             design.folderItem = ["draw", "solid", 30, 50, 10, ["#ea0000"], ["#000"], ["ea5000"], ["#eaeaea"]];
             design.mouse = ["draw", "#fff", "#000", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15, 0, 0]];
             break;
@@ -87,13 +87,13 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         switch (ctBackground[0]) {
             case "draw":
                 dc.rect(0, 0, width, height);
-                switch (ctBackground[1]) {
+                switch (ctBackground[1].split("_", 1)[0]) {
                     case "solid":
                     default:
-                        dc.fillStyle = ctBackground[5][0];
+                        dc.fillStyle = ctBackground[4][0];
                         break;
                     case "gradient":
-                        dc.fillStyle = createGradient(ctBackground[2], ctBackground[3], ctBackground[4], ctBackground[5]);
+                        dc.fillStyle = createGradient(ctBackground[1].split("_", 2)[1], ctBackground[2], ctBackground[3], ctBackground[4]);
                         break;
                 }
 
