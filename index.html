@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>CanTop Version 1.0</title>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" type="text/css" href="css/main.css" />
+    </head>
+
+    <body>
+        <div id="mainContainer">
+            <canvas id="canTopCanvas" width="320" height="240">
+                Your browser does not support canvas item, get a version of <a href="http://mozilla.org/firefox">Firefox</a>
+                or <a href="http://chrome.google.com">Google Chrome</a> which support canvas.
+            </canvas>
+        </div>
+
+        <script type="text/javascript" src="js/canTop.js"></script>
+        <script type="text/javascript">
+            canTop("canTopCanvas", "template", 800, 600, 10, 10, true, true, true);
+        </script>
+    </body>
+</html>
