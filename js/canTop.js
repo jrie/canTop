@@ -35,7 +35,7 @@ function getDesign(designName, width, heigth, girdX, gridY) {
     return design;
 }
 
-function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMouse, showGrid, drawCell) {
+function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMouse, useDebug) {
 
 
 
@@ -56,8 +56,6 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     mouse.y = 0;
     mouse.offsetX = canvas.offsetLeft;
     mouse.offsetY = canvas.offsetTop;
-
-    var mainloopRunning = false;
 
     function createGradient(direction, width, height, colors) {
         var background;
@@ -154,28 +152,18 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     }
 
     function mainloop() {
-        if (!mainloopRunning) {
-            mainloopRunning = true;
-            drawBackground();
+        drawBackground();
 
-            if (showGrid) {
-                drawGrid();
-            }
-
-            if (drawCell) {
-                drawActiveCell();
-            }
-
-            if (useCustomMouse) {
-                drawMouse();
-            }
-
-
-
-
-            window.requestAnimationFrame(mainloop);
-            mainloopRunning = false;
+        if (useDebug) {
+            drawGrid();
+            drawActiveCell();
         }
+
+        if (useCustomMouse) {
+            drawMouse();
+        }
+
+        window.requestAnimationFrame(mainloop);
     }
 
     // Bind the mouse to the current window
