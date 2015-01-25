@@ -25,14 +25,13 @@ function getDesign(designName, width, heigth, gridX, gridY) {
     switch (designName) {
         case "template":
         default:
-            design.background = ["draw", "solid", width, heigth, ["#3a0700", "#000", "#001100", "#003300", "#000"]]; // type img/draw, draw solid/gradient_direction, sizeX, sizeY, color
+            // Background design - type img/draw, draw solid/gradient_direction,
+            // sizeX, sizeY, colors
+            design.background = ["draw", "solid", width, heigth, ["#3a0700", "#000", "#001100", "#003300", "#000"]];
+
+            // Mouse design
             design.mouse = ["draw", "#fff", "#000", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15, 0, 0]];
             break;
-    }
-
-    if (design.mouse[3].length % 2 !== 0) {
-        lg("Unqeual coordinates to draw the mouse, falling back to default replacement.");
-        design.mouse = ["draw", "#fff", "#000", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15, 0, 0]];
     }
 
     return design;
@@ -57,11 +56,16 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     mouse.offsetX = canvas.offsetLeft;
     mouse.offsetY = canvas.offsetTop;
 
+    // Variables for active cell drawing
+    var gridPoint = []
+
     // Helper function to generate gradients
+    var background;
+    var stepSize = 0.0;
+    var current = 1.0;
     function createGradient(direction, width, height, colors) {
-        var background;
-        var stepSize = (1.0 / (colors.length - 1)).toPrecision(2);
-        var current = 1.0;
+        stepSize = (1.0 / (colors.length - 1)).toPrecision(2);
+        current = 1.0;
         switch (direction) {
             case "rl":
                 colors.reverse();
@@ -82,6 +86,11 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         }
 
         return background;
+    }
+
+    // Calculate px to grid
+    function getMouseGridPoint() {
+        return [Math.floor((mouse.x - mouse.offsetX) / gridX), Math.floor((mouse.y - mouse.offsetY) / gridY)];
     }
 
 
@@ -133,12 +142,10 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         dc.closePath();
     }
 
-
     function drawActiveCell() {
-        var activeX = Math.floor((mouse.x - mouse.offsetX) / gridX);
-        var activeY = Math.floor((mouse.y - mouse.offsetY) / gridY);
+        gridPoint = getMouseGridPoint();
         dc.fillStyle = "rgba(200, 200, 0, 0.4)";
-        dc.fillRect(activeX * gridX, activeY * gridY, gridX, gridY);
+        dc.fillRect(gridPoint[0] * gridX, gridPoint[1] * gridY, gridX, gridY);
     }
 
 
