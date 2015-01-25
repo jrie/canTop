@@ -49,7 +49,6 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     // Get the default design values for quicker access
     var ctBackground = design.background;
     var ctMouse = design.mouse;
-    var ctFolderItem = design.folderItem;
 
     // Other values we work with
     var mouse = {};
