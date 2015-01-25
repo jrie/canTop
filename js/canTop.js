@@ -22,6 +22,7 @@ function lg(msg) {
 function getDesign(designName, width, heigth, gridX, gridY) {
 
     var design = {};
+
     switch (designName) {
         case "template":
         default:
@@ -30,7 +31,9 @@ function getDesign(designName, width, heigth, gridX, gridY) {
             design.background = ["draw", "solid", width, heigth, ["#3a0700", "#000", "#001100", "#003300", "#000"]];
 
             // Mouse design
-            design.mouse = ["draw", "#fff", "#000", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15, 0, 0]];
+            design.defaultMouse = ["draw", "#fff", "#000", "round", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15, 0, 0]];
+
+            design.lineJoin = "round";
             break;
     }
 
@@ -47,7 +50,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
     // Get the default design values for quicker access
     var ctBackground = design.background;
-    var ctMouse = design.mouse;
+    var ctDefaultMouse = design.defaultMouse;
 
     // Other values we work with
     var mouse = {};
@@ -55,14 +58,27 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     mouse.y = 0;
     mouse.offsetX = canvas.offsetLeft;
     mouse.offsetY = canvas.offsetTop;
+    mouse.current = "default";
+
+    var activeMouse = [];
 
     // Variables for active cell drawing
-    var gridPoint = []
+    var gridPoint = [];
+
+    var gridStart = [0, 0];
+    var gridEnd = [canvas.width, canvas.height];
+
+    // Generally used for drawing procedures
+    var stepX = 0;
+    var stepY = 0;
+    var drawingCords = [];
+    var drawingSteps = 0;
 
     // Helper function to generate gradients
     var background;
     var stepSize = 0.0;
     var current = 1.0;
+
     function createGradient(direction, width, height, colors) {
         stepSize = (1.0 / (colors.length - 1)).toPrecision(2);
         current = 1.0;
@@ -88,12 +104,18 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         return background;
     }
 
-    // Calculate px to grid
+    // Calculate mouse px to grid
     function getMouseGridPoint() {
         return [Math.floor((mouse.x - mouse.offsetX) / gridX), Math.floor((mouse.y - mouse.offsetY) / gridY)];
     }
 
+    // Calculate px to grid
+    function getGridPoint(x, y) {
+        return [Math.floor(x / gridX), Math.floor(y / gridY)];
+    }
 
+
+    // Drawing routines
     function drawBackground() {
         switch (ctBackground[0]) {
             case "draw":
@@ -114,27 +136,24 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         }
     }
 
-
     function drawGrid() {
-        var maxWidth = canvas.width - gridX;
-        var maxHeight = canvas.height - gridY;
-        var stepX = 0;
-        var stepY = gridY;
+        stepX = 0;
+        stepY = gridY;
 
         dc.lineWidth = 0.6;
         dc.strokeStyle = "rgba(255, 255, 255, 0.1)";
 
         dc.beginPath();
 
-        while (stepY <= maxHeight) {
-            dc.moveTo(0, stepY);
-            dc.lineTo(canvas.width, stepY);
+        while (stepY <= gridEnd[1]) {
+            dc.moveTo(gridStart[0], stepY);
+            dc.lineTo(gridEnd[0], stepY);
             stepY += gridY;
         }
 
-        while (stepX <= maxWidth) {
-            dc.moveTo(stepX, 0);
-            dc.lineTo(stepX, canvas.height);
+        while (stepX <= gridEnd[0]) {
+            dc.moveTo(stepX, gridStart[1]);
+            dc.lineTo(stepX, gridEnd[1]);
             stepX += gridX;
         }
 
@@ -148,14 +167,22 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         dc.fillRect(gridPoint[0] * gridX, gridPoint[1] * gridY, gridX, gridY);
     }
 
-
     function drawMouse() {
-        if (ctMouse[0] === "draw") {
-            var drawingCords = ctMouse[3];
-            var drawingSteps = drawingCords.length;
+        switch (mouse.current) {
+            case "default":
+            default:
+                activeMouse = ctDefaultMouse;
+                break;
+        }
 
-            dc.fillStyle = ctMouse[1];
-            dc.strokeStyle = ctMouse[2];
+        if (ctDefaultMouse[0] === "draw") {
+            drawingCords = activeMouse[4];
+            drawingSteps = drawingCords.length;
+
+            dc.fillStyle = activeMouse[1];
+            dc.strokeStyle = activeMouse[2];
+            dc.lineJoin = activeMouse[3];
+
             dc.lineWidth = 2;
             dc.moveTo(mouse.x, mouse.y);
             dc.beginPath();
@@ -170,6 +197,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         }
     }
 
+    // Main loop
     function mainloop() {
         drawBackground();
 
