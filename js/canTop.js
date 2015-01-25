@@ -19,14 +19,13 @@ function lg(msg) {
 
 // Start of main functions
 
-function getDesign(designName, width, heigth, girdX, gridY) {
+function getDesign(designName, width, heigth, gridX, gridY) {
 
     var design = {};
     switch (designName) {
         case "template":
         default:
             design.background = ["draw", "solid", width, heigth, ["#3a0700", "#000", "#001100", "#003300", "#000"]]; // type img/draw, draw solid/gradient_direction, sizeX, sizeY, color
-            design.folderItem = ["draw", "solid", 50, 30, [[0, 0, 45, 0, 45, 5, 50, 5, 50, 35, 0, 35, 0, 0], [0, 0, 45, 0, 45, 5, 50, 5, 50, 35, 0, 35, 0, 0]], ["#ea0000"], ["#000"], ["ea5000"], ["#eaeaea"], "#fff"];
             design.mouse = ["draw", "#fff", "#000", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15, 0, 0]];
             break;
     }
@@ -165,73 +164,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         }
     }
 
-
-    // Generate test folder items
-    var testFolderItems = [[20, 20, "Drawing Board"], [20, 90, "Documents"]];
-
-    function createFolder(x, y, title) {
-        var folderItem = {};
-        folderItem.x = x;
-        folderItem.y = y;
-        folderItem.open = false;
-        folderItem.width = ctFolderItem[2];
-        folderItem.height = ctFolderItem[3];
-        folderItem.title = title;
-        canTopData.folderItems.push(folderItem);
-    }
-
-    for (var testItem = 0; testItem < testFolderItems.length; testItem++) {
-        createFolder(testFolderItems[testItem][0], testFolderItems[testItem][1], testFolderItems[testItem][2]);
-    }
-
-    //design.folderItem = ["draw", "solid", 50, 30, [0, 0, 45, 10, 50, 14, 50, 30, 0, 30, 0, 0], ["#ea0000"], ["#000"], ["ea5000"], ["#eaeaea"], "#fff"];
-    function drawFolderItems() {
-        var folderItems = canTopData.folderItems.length;
-        for (var folderItem = 0; folderItem < folderItems; folderItem++) {
-            var folder = canTopData.folderItems[folderItem];
-            if (ctFolderItem[0] === "draw") {
-                var drawingCords = [];
-                if (folder.open) {
-                    drawingCords = ctFolderItem[4][1];
-                } else {
-                    drawingCords = ctFolderItem[4][0];
-                }
-
-                var drawingSteps = drawingCords.length;
-                var drawType = ctFolderItem[1].split("_", 2);
-                switch (drawType[0]) {
-                    case "solid":
-                    default:
-                        dc.fillStyle = ctFolderItem[5][0];
-                        dc.strokeStyle = ctFolderItem[6][0];
-                        break;
-                    case "gradient":
-                        dc.fillStyle = createGradient(drawType[1], ctFolderItem[2], ctFolderItem[3], ctFolderItem[5]);
-                        dc.strokeStyle = createGradient(drawType[1], ctFolderItem[2], ctFolderItem[3], ctFolderItem[6]);
-                        break;
-                }
-
-                dc.lineWidth = 2;
-                dc.moveTo(folder.x + drawingCords[0], folder.y + drawingCords[1]);
-
-                dc.beginPath();
-                for (var index = 0; index < drawingSteps; index += 2) {
-                    dc.lineTo(folder.x + drawingCords[index], folder.y + drawingCords[index + 1]);
-                }
-
-                dc.closePath();
-                dc.stroke();
-                dc.fill();
-
-                dc.textAlign = "center";
-                dc.fillText(folder.title, folder.x + (folder.width / 2), folder.y + ctFolderItem[3] + 20);
-            }
-        }
-    }
-
     function mainloop() {
         drawBackground();
-        drawFolderItems();
 
         if (useDebug) {
             drawGrid();
