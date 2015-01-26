@@ -1,14 +1,12 @@
 // Temporary data holder for canTopData
 var canTopData = {};
-canTopData.controls = [];
-canTopData.labels = [];
-canTopData.selections = [];
-canTopData.activeSelection = [false, 0, 0];
-canTopData.folderItems = [];
+canTopData.activeSelection = [];
+canTopData.renderItems = [];
 
 // This functions later will be moved into the main function and are not global
 var canvas = document.getElementById("canTopCanvas");
 var dc = canvas.getContext("2d");
+var design = {};
 
 var hasConsole = window.console ? true : false;
 function lg(msg) {
@@ -21,7 +19,8 @@ function lg(msg) {
 
 function getDesign(designName, width, heigth, gridX, gridY) {
 
-    var design = {};
+    //var design = {};
+    design.imageMap = new Image();
 
     switch (designName) {
         case "template":
@@ -34,6 +33,10 @@ function getDesign(designName, width, heigth, gridX, gridY) {
             design.defaultMouse = ["draw", "#fff", "#000", "round", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15, 0, 0]];
 
             design.lineJoin = "round";
+
+            // Icons
+            design.imageMap.src = "./img/template_imagemap.png";
+            design.folderIcon = [50, 50, [[0, 0], [50, 0], [100, 0], [150, 0]], ["#dedede", "#fff"]];
             break;
     }
 
@@ -41,6 +44,8 @@ function getDesign(designName, width, heigth, gridX, gridY) {
 }
 
 function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMouse, useDebug) {
+
+    window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.oRequestAnimationFrame;
 
     //var canvas = document.getElementById(canvasItem);
     //var dc = canvas.getContext("2d");
@@ -51,22 +56,28 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     // Get the default design values for quicker access
     var ctBackground = design.background;
     var ctDefaultMouse = design.defaultMouse;
+    var ctFolderIcon = design.folderIcon;
 
     // Other values we work with
     var mouse = {};
     mouse.x = 0;
     mouse.y = 0;
+    mouse.previousX = 0;
+    mouse.previousY = 0;
+    mouse.threshold = 20;
     mouse.offsetX = canvas.offsetLeft;
     mouse.offsetY = canvas.offsetTop;
     mouse.current = "default";
+    mouse.clickCount = 0;
+    mouse.clickInterval = null;
+    mouse.doubleClickSpeed = 320;
 
-    var activeMouse = [];
-
-    // Variables for active cell drawing
+    // Variables for grid drawing
     var gridPoint = [];
-
     var gridStart = [0, 0];
     var gridEnd = [canvas.width, canvas.height];
+
+    // Settings
 
     // Generally used for drawing procedures
     var stepX = 0;
@@ -113,7 +124,6 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     function getGridPoint(x, y) {
         return [Math.floor(x / gridX), Math.floor(y / gridY)];
     }
-
 
     // Drawing routines
     function drawBackground() {
@@ -168,6 +178,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     }
 
     function drawMouse() {
+        var activeMouse = [];
         switch (mouse.current) {
             case "default":
             default:
@@ -197,28 +208,142 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         }
     }
 
-    // Main loop
-    function mainloop() {
-        drawBackground();
+    // The actual mouse click handler
+    function doClick() {
+        var mx = mouse.x - mouse.offsetX;
+        var my = mouse.y - mouse.offsetY;
 
-        if (useDebug) {
-            drawGrid();
-            drawActiveCell();
+        var folderItem = {};
+        var index = canTopData.renderItems.length;
+
+        while (index--) {
+            var item = canTopData.renderItems[index];
+            if (mx >= item.x && mx <= (item.x + item.width) && my >= item.y && my <= (item.y + item.height)) {
+                if (mouse.clickCount > 1) {
+                    if (item.type === 0) {
+                        item.open = !item.open;
+                    }
+                } else {
+                    if (item.type === 0) {
+                        item.selected = !item.selected;
+                    }
+                }
+
+                break;
+            }
         }
 
-        if (useCustomMouse) {
-            drawMouse();
+        mouse.clickCount = 0;
+    }
+
+    function recognizeDoubleClick() {
+        clearInterval(mouse.clickInterval);
+        mouse.clickInterval = null;
+
+        // Check if the mouse made a large movement above our trigger threshold
+        // which renders the click(s) invalid
+        if (mouse.threshold < Math.abs(mouse.x - mouse.previousX) || mouse.threshold < Math.abs(mouse.y - mouse.previousY)) {
+            mouse.clickCount = 0;
+            return;
         }
 
-        window.requestAnimationFrame(mainloop);
+        doClick();
+    }
+
+    function checkClick(evt) {
+        mouse.clickCount++;
+        if (mouse.clickInterval === null) {
+            mouse.previousX = evt.clientX;
+            mouse.previousY = evt.clientY;
+            mouse.clickInterval = setInterval(recognizeDoubleClick, mouse.doubleClickSpeed);
+        }
+    }
+
+    // Render item creation functions
+    function createFolderItem(title, x, y) {
+        var item = {};
+        item.type = 0;
+        item.title = title;
+        item.open = false;
+        item.selected = false;
+        item.x = x;
+        item.y = y;
+        item.width = 50;
+        item.height = 60;
+        canTopData.renderItems.push(item);
+    }
+
+    // Drawing of render items based on item status
+    function drawRenderItems() {
+        var item = {};
+
+        for (var index = 0; index < canTopData.renderItems.length; index++) {
+            item = canTopData.renderItems[index];
+
+            if (item.type === 0) {
+                if (!item.open) {
+                    if (item.selected) {
+                        dc.drawImage(design.imageMap, ctFolderIcon[2][2][0], ctFolderIcon[2][2][1], ctFolderIcon[0], ctFolderIcon[1], item.x, item.y, item.width, ctFolderIcon[1]);
+                    } else {
+                        dc.drawImage(design.imageMap, ctFolderIcon[2][0][0], ctFolderIcon[2][0][1], ctFolderIcon[0], ctFolderIcon[1], item.x, item.y, item.width, ctFolderIcon[1]);
+                    }
+                    dc.fillStyle = ctFolderIcon[3][0];
+                } else {
+                    if (item.selected) {
+                        dc.drawImage(design.imageMap, ctFolderIcon[2][3][0], ctFolderIcon[2][3][1], ctFolderIcon[0], ctFolderIcon[1], item.x, item.y, item.width, ctFolderIcon[1]);
+                    } else {
+                        dc.drawImage(design.imageMap, ctFolderIcon[2][1][0], ctFolderIcon[2][1][1], ctFolderIcon[0], ctFolderIcon[1], item.x, item.y, item.width, ctFolderIcon[1]);
+                    }
+                    dc.fillStyle = ctFolderIcon[3][1];
+                }
+
+                dc.textAlign = "center";
+                dc.fillText(item.title, item.x + (item.width / 2), ctFolderIcon[1] + item.y + 5);
+            }
+        }
     }
 
 
-    // Bind the mouse to the current window
-    canvas.addEventListener("mousemove", function (evt) {
-        mouse.x = evt.clientX;
-        mouse.y = evt.clientY;
-    });
+    // Main function executes after desktop imagemap has been loaded
+    function initialized() {
+        createFolderItem("Documents", 20, 10);
+        createFolderItem("Briefcase", 20, 80);
 
-    mainloop();
+        // Main loop
+        function mainloop() {
+            drawBackground();
+
+            drawRenderItems();
+
+            if (useDebug) {
+                drawGrid();
+                drawActiveCell();
+            }
+
+            if (useCustomMouse) {
+                drawMouse();
+            }
+
+            window.requestAnimationFrame(mainloop);
+        }
+
+
+        // Bind the mouse to the current window
+        canvas.addEventListener("mousemove", function (evt) {
+            mouse.x = evt.clientX;
+            mouse.y = evt.clientY;
+        });
+
+        canvas.addEventListener("click", checkClick);
+        mainloop();
+    }
+
+    function checkLoaded() {
+        if (design.imageMap.src === "" || (design.imageMap.width !== 0 || design.imageMap.height !== 0 || design.imageMap.complete === true)) {
+            clearInterval(loaderCheckInterval);
+            initialized();
+        }
+    }
+
+    var loaderCheckInterval = setInterval(checkLoaded, 120);
 }
