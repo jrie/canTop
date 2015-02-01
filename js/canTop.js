@@ -414,7 +414,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         // Move the window on top of the stack and mark it active
         // degerade order index on stack by 1
         if (zOrderIndex < canTopData.renderQueueSize) {
-            canTopData.renderQueue[zOrderIndex].zOrder = canTopData.renderQueueSize;
+            canTopData.renderQueue[zOrderIndex].zOrder = canTopData.renderQueueSize - 1;
             canTopData.renderQueue.push(canTopData.renderQueue[zOrderIndex]);
             canTopData.renderQueue.splice(zOrderIndex, 1);
             index = canTopData.renderQueueSize - 1;
