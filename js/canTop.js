@@ -161,13 +161,13 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     }
 
 
-    function createWindow(design) {
+    function createWindow(design, title, x, y) {
         var windowItem = {};
-        windowItem.title = "Test Windowtitel";
+        windowItem.title = title;
         windowItem.width = 300;
         windowItem.height = 120;
-        windowItem.x = 200;
-        windowItem.y = 200;
+        windowItem.x = x;
+        windowItem.y = y;
         windowItem.zOrder = canTopData.renderQueueSize;
         windowItem.drawingItems = ["windowTitleBar", "windowContent"];
         windowItem.hotSpots = ["windowTitleBar", "windowContent"];
@@ -388,77 +388,94 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         var mx = mouse.x - mouse.offsetX;
         var my = mouse.y - mouse.offsetY;
 
-        var index = 0;
         var item = {};
         var hotSpot = 0;
+        var activeItem = {};
+        var zOrderIndex = -1;
 
-        // Check window clicks and window item hotspots for special features
+        var index = 0;
+
+        var designItem = [];
+        var designHotSpots = [];
+        var pressedItem = false;
+
+        // Check window clicks
         index = canTopData.renderQueueSize;
         while (index--) {
             item = canTopData.renderQueue[index];
             if (mx >= item.x && mx <= (item.x + item.width) && my >= item.y && my <= (item.y + item.height)) {
-                hotSpot = item.hotSpots.length;
-                var designItem = [];
-                var designHotSpots = [];
-                var pressedItem = false;
+                if (zOrderIndex < item.zOrder) {
+                    activeItem = item;
+                    zOrderIndex = item.zOrder;
+                }
+            }
+        }
 
-                while (hotSpot--) {
-                    designItem = design[item.hotSpots[hotSpot]];
-                    designHotSpots = getArrayCopy(designItem[6]);
+        // Move the window on top of the stack and mark it active
+        // degerade order index on stack by 1
+        if (zOrderIndex < canTopData.renderQueueSize) {
+            canTopData.renderQueue[zOrderIndex].zOrder = canTopData.renderQueueSize;
+            canTopData.renderQueue.push(canTopData.renderQueue[zOrderIndex]);
+            canTopData.renderQueue.splice(zOrderIndex, 1);
+            index = canTopData.renderQueueSize - 1;
+            while (index--) {
+                canTopData.renderQueue[index].zOrder--;
+            }
+        }
 
-                    if (designItem[0] === "both") {
-                        if (designHotSpots[2] < item.width) {
-                            designHotSpots[2] = Math.round(designHotSpots[2] * (item.width / designHotSpots[2]));
-                        }
 
-                        if (designHotSpots[3] < item.height) {
-                            designHotSpots[3] = Math.round(designHotSpots[3] * (item.height / designHotSpots[3]));
-                        }
-                    } else if (designItem[0] === "x") {
-                        designHotSpots[2] = Math.round(designHotSpots[2] * (item.width / designHotSpots[2]));
-                    }
+        // Check the hotspots of the active window
+        hotSpot = activeItem.hotSpots.length;
+        while (hotSpot--) {
+            designItem = design[activeItem.hotSpots[hotSpot]];
+            designHotSpots = getArrayCopy(designItem[6]);
 
-                    designHotSpots[0] += item.x;
-                    designHotSpots[1] += item.y;
-                    designHotSpots[2] += item.x;
-                    designHotSpots[3] += item.y;
-
-                    if (mx >= designHotSpots[0] && mx <= designHotSpots[2] && my >= designHotSpots[1] && my <= designHotSpots[3]) {
-                        if (mouse.realiseMovement) {
-                            pressedItem = item.hotSpots[hotSpot];
-                        }
-
-                        // Testing brake, check with zOrder later to set the current
-                        // window active for example or leverage another window over
-                        // the current one
-                        break;
-                    }
+            if (designItem[0] === "both") {
+                if (designHotSpots[2] < activeItem.width) {
+                    designHotSpots[2] = Math.round(designHotSpots[2] * (activeItem.width / designHotSpots[2]));
                 }
 
-                if (pressedItem) {
-                    if (mouse.clickCount > 1) {
-                        // Do something with the item here
-                        lg("in two mouseclicks");
-                        lg("Pressed item: " + item.zOrder + " / " + pressedItem);
-                    } else {
-                        lg("in one mouseclick");
-                        lg("Pressed item: " + item.zOrder + " / " + pressedItem);
+                if (designHotSpots[3] < activeItem.height) {
+                    designHotSpots[3] = Math.round(designHotSpots[3] * (activeItem.height / designHotSpots[3]));
+                }
+            } else if (designItem[0] === "x") {
+                designHotSpots[2] = Math.round(designHotSpots[2] * (activeItem.width / designHotSpots[2]));
+            }
 
-                        if (mouse.clickCount === 0) {
-                            if (pressedItem === "windowTitleBar") {
-                                if (mouse.moveInterval === null) {
-                                    mouse.previousX = mouse.x;
-                                    mouse.previousY = mouse.y;
-                                    mouse.moveInterval = setInterval(realiseMouseMovement, mouse.movementSpeed);
-                                    mouse.activeItem = item;
-                                    return;
-                                }
-                            }
+            designHotSpots[0] += activeItem.x;
+            designHotSpots[1] += activeItem.y;
+            designHotSpots[2] += activeItem.x;
+            designHotSpots[3] += activeItem.y;
 
+            if (mx >= designHotSpots[0] && mx <= designHotSpots[2] && my >= designHotSpots[1] && my <= designHotSpots[3]) {
+                if (mouse.realiseMovement) {
+                    pressedItem = activeItem.hotSpots[hotSpot];
+                }
+            }
+        }
+
+        // Do something with the pressed Item
+        if (pressedItem) {
+            if (mouse.clickCount > 1) {
+                // Do something with the item here
+                lg("in two mouseclicks");
+                lg("Pressed item: " + activeItem.zOrder + " / " + pressedItem);
+            } else {
+                lg("in one mouseclick");
+                lg("Pressed item: " + activeItem.zOrder + " / " + pressedItem);
+
+                if (mouse.clickCount === 0) {
+                    if (pressedItem === "windowTitleBar") {
+                        if (mouse.moveInterval === null) {
+                            mouse.previousX = mouse.x;
+                            mouse.previousY = mouse.y;
+                            mouse.moveInterval = setInterval(realiseMouseMovement, mouse.movementSpeed);
+                            mouse.activeItem = activeItem;
+                            return;
                         }
                     }
-                }
 
+                }
             }
         }
 
@@ -563,7 +580,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     function initialized() {
         createFolderItem("Documents", 20, 10);
         createFolderItem("Briefcase", 20, 80);
-        createWindow(design);
+        createWindow(design, "Window Testtitle - Window 1", 100, 100);
+        createWindow(design, "Window Testtitle - Window 2", 420, 100);
 
         // Main loop
         function mainloop() {
@@ -572,6 +590,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             drawRenderItems();
 
             drawQueueItem(0);
+            drawQueueItem(1);
 
             if (useDebug) {
                 drawGrid();
