@@ -4,6 +4,7 @@ canTopData.activeSelection = [];
 canTopData.renderItems = [];
 canTopData.renderQueue = [];
 canTopData.renderQueueSize = 0;
+canTopData.activeWindow = false;
 
 // This functions later will be moved into the main function and are not global
 var canvas = document.getElementById("canTopCanvas");
@@ -97,6 +98,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
         var dimensionX = 0;
         var dimensionY = 0;
+        var offsetY = 0;
 
         while (index < drawingCount) {
             drawingDesign = design[item.drawingItems[index]];
@@ -104,27 +106,25 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             var drawingDimension = drawingDesign[0];
             var sizeX = drawingDesign[6][2];
             var sizeY = drawingDesign[6][3];
+            dimensionX = sizeX;
+            dimensionY = sizeY;
 
             if (drawingDimension === "both") {
-                dimensionX = item.width;
-                dimensionY = item.height;
-
                 if (sizeX < item.width) {
-                    dimensionX = Math.round(sizeX * (item.width / sizeX));
+                    dimensionX = item.width;
                 }
 
-                if (sizeY < item.height) {
-                    dimensionY = Math.round(sizeY * (item.height / sizeY));
+                if (sizeY > item.height) {
+                    dimensionY = item.height - offsetY;
                 }
-
             } else if (drawingDimension === "x") {
-                dimensionX = sizeX;
-                dimensionY = sizeY;
-
                 if (sizeX < item.width) {
-                    dimensionX = Math.round(sizeX * (item.width / sizeX));
+                    dimensionX = item.width;
                 }
+
+                offsetY += sizeY;
             }
+
 
             // Generarte the fill style
             var drawType = drawingDesign[3][0].split("_", 2);
@@ -149,7 +149,11 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             // If we have a item containing more information, we draw those hear
             if (item.drawingItems[index] === "windowTitleBar") {
                 // Add the title
-                dc.fillStyle = drawingDesign[1][0];
+                if (canTopData.activeWindow === item.title) {
+                    dc.fillStyle = drawingDesign[1][0];
+                } else {
+                    dc.fillStyle = drawingDesign[1][1];
+                }
                 dc.textAlign = "left";
                 dc.fillText(item.title, item.x + 5, item.y + 11);
             }
@@ -385,6 +389,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
     // The actual mouse click handler
     function doClick() {
+
         var mx = mouse.x - mouse.offsetX;
         var my = mouse.y - mouse.offsetY;
 
@@ -399,6 +404,9 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         var designHotSpots = [];
         var pressedItem = false;
 
+        // Reset the active selection on click and select later
+        canTopData.activeWindow = false;
+
         // Check window clicks
         index = canTopData.renderQueueSize;
         while (index--) {
@@ -407,6 +415,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                 if (zOrderIndex < item.zOrder) {
                     activeItem = item;
                     zOrderIndex = item.zOrder;
+                    canTopData.activeWindow = item.title;
                 }
             }
         }
@@ -459,6 +468,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                 // Do something with the item here
                 lg("in two mouseclicks");
                 lg("Pressed item: " + activeItem.title + " / " + pressedItem);
+                return;
             } else {
                 lg("in one mouseclick");
                 lg("Pressed item: " + activeItem.title + " / " + pressedItem);
@@ -470,8 +480,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                             mouse.previousY = mouse.y;
                             mouse.moveInterval = setInterval(realiseMouseMovement, mouse.movementSpeed);
                             mouse.activeItem = activeItem;
-                            return;
                         }
+                        return;
                     }
 
                 }
