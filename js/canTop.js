@@ -125,26 +125,40 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                 offsetY += sizeY;
             }
 
+            for (var drawingIndex = 0; drawingIndex < drawingDesign[2].length; drawingIndex++) {
+                // Generarte the fill style
+                var drawType = drawingDesign[3][drawingIndex].split("_", 2);
+                switch (drawType[0]) {
+                    case "solid":
+                        dc.fillStyle = drawingDesign[4][drawingIndex][0];
+                        break;
+                    case "gradient":
+                        dc.fillStyle = createGradient(drawType[1], item.x, item.y, dimensionX, dimensionY, drawingDesign[4][drawingIndex]);
+                        break
+                }
 
-            // Generarte the fill style
-            var drawType = drawingDesign[3][0].split("_", 2);
-            switch (drawType[0]) {
-                case "solid":
-                    dc.fillStyle = drawingDesign[4][0][0];
-                    break;
-                case "gradient":
-                    dc.fillStyle = createGradient(drawType[1], item.x, item.y, dimensionX, dimensionY, drawingDesign[4][0]);
-                    break
+                // Actual drawing
+                switch (drawingDesign[2][0]) {
+                    case "line":
+                        dc.beginPath();
+                        var drawingCords = drawingDesign[5][drawingIndex];
+                        var drawingSteps = drawingDesign[5][drawingIndex].length;
+                        for (var cords = 0; cords < drawingSteps; cords += 2) {
+                            dc.lineTo(mouse.x + drawingCords[index] - mouse.offsetX, mouse.y + drawingCords[index + 1] - mouse.offsetY);
+                        }
+
+                        dc.lineTo(mouse.x + drawingCords[0] - mouse.offsetX, mouse.y + drawingCords[1] - mouse.offsetY);
+                        dc.closePath();
+                        dc.fill();
+                        break;
+                    case "rect":
+                    default:
+                        dc.strokeRect(item.x + drawingDesign[5][drawingIndex][0], item.y + drawingDesign[5][drawingIndex][1], dimensionX, dimensionY);
+                        dc.fillRect(item.x + drawingDesign[5][drawingIndex][0], item.y + drawingDesign[5][drawingIndex][1], dimensionX, dimensionY);
+                        break;
+                }
             }
 
-            // Actual drawing
-            switch (drawingDesign[2][0]) {
-                case "rect":
-                default:
-                    dc.strokeRect(item.x + drawingDesign[5][0][0], item.y + drawingDesign[5][0][1], dimensionX, dimensionY);
-                    dc.fillRect(item.x + drawingDesign[5][0][0], item.y + drawingDesign[5][0][1], dimensionX, dimensionY);
-                    break;
-            }
 
             // If we have a item containing more information, we draw those hear
             if (item.drawingItems[index] === "windowTitleBar") {
