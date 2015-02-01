@@ -25,18 +25,22 @@ function getDesign(designName, width, heigth, gridX, gridY) {
     switch (designName) {
         case "template":
         default:
-            // Background design - type img/draw, draw solid/gradient_direction,
+            // Background design - type img/draw, draw solid/gradient_tb/gradient_lr,
             // sizeX, sizeY, colors
             design.background = ["draw", "solid", width, heigth, ["#3a0700", "#000", "#001100", "#003300", "#000"]];
 
             // Mouse design
-            design.defaultMouse = ["draw", "#fff", "#000", "round", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15, 0, 0]];
+            design.defaultMouse = ["#fff", "#000", "round", [0, 0, 1, 0, 12, 10, 12, 15, 5, 15]];
 
             design.lineJoin = "round";
 
             // Icons
             design.imageMap.src = "./img/template_imagemap.png";
             design.folderIcon = [50, 50, [[0, 0], [50, 0], [100, 0], [150, 0]], ["#dedede", "#fff"]];
+
+            // Window prototype
+            design.windowTitle = [["#fff", "#aeaeae"], ["rect"], ["solid"], ["#4a0000"], [[0, 0, 100, 10]]];
+            design.window = [["#fff", "#aeaeae"], ["rect"], ["solid"], ["#2a0000"], [[0, 10, 100, 150]]];
             break;
     }
 
@@ -115,6 +119,19 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         return background;
     }
 
+    // Beginn of generic helper functions
+
+    // Create and return a copy of an array item
+    function getArrayCopy(arrayItem) {
+        var arrayCopy = [];
+        var items = arrayItem.length;
+        for (var index = 0; index < items; index++) {
+            arrayCopy.push(arrayItem[index]);
+        }
+
+        return arrayCopy;
+    }
+
     // Calculate mouse px to grid
     function getMouseGridPoint() {
         return [Math.floor((mouse.x - mouse.offsetX) / gridX), Math.floor((mouse.y - mouse.offsetY) / gridY)];
@@ -125,7 +142,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         return [Math.floor(x / gridX), Math.floor(y / gridY)];
     }
 
-    // Drawing routines
+    // Beginn of drawing routines
     function drawBackground() {
         switch (ctBackground[0]) {
             case "draw":
@@ -186,26 +203,51 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                 break;
         }
 
-        if (ctDefaultMouse[0] === "draw") {
-            drawingCords = activeMouse[4];
-            drawingSteps = drawingCords.length;
+        drawingCords = activeMouse[3];
+        drawingSteps = drawingCords.length;
 
-            dc.fillStyle = activeMouse[1];
-            dc.strokeStyle = activeMouse[2];
-            dc.lineJoin = activeMouse[3];
+        dc.fillStyle = activeMouse[0];
+        dc.strokeStyle = activeMouse[1];
+        dc.lineJoin = activeMouse[2];
 
-            dc.lineWidth = 2;
-            dc.moveTo(mouse.x, mouse.y);
-            dc.beginPath();
+        dc.lineWidth = 2;
+        dc.moveTo(mouse.x, mouse.y);
+        dc.beginPath();
 
-            for (var index = 0; index < drawingSteps; index += 2) {
-                dc.lineTo(mouse.x + drawingCords[index] - mouse.offsetX, mouse.y + drawingCords[index + 1] - mouse.offsetY);
-            }
-
-            dc.closePath();
-            dc.stroke();
-            dc.fill();
+        for (var index = 0; index < drawingSteps; index += 2) {
+            dc.lineTo(mouse.x + drawingCords[index] - mouse.offsetX, mouse.y + drawingCords[index + 1] - mouse.offsetY);
         }
+
+        dc.lineTo(mouse.x + drawingCords[0] - mouse.offsetX, mouse.y + drawingCords[1] - mouse.offsetY);
+
+        dc.closePath();
+        dc.stroke();
+        dc.fill();
+    }
+
+    // Click handler to check count of clicks
+    function checkClick(evt) {
+        mouse.clickCount++;
+        if (mouse.clickInterval === null) {
+            mouse.previousX = evt.clientX;
+            mouse.previousY = evt.clientY;
+            mouse.clickInterval = setInterval(recognizeDoubleClick, mouse.doubleClickSpeed);
+        }
+    }
+
+    // Timed function to check for double click
+    function recognizeDoubleClick() {
+        clearInterval(mouse.clickInterval);
+        mouse.clickInterval = null;
+
+        // Check if the mouse made a large movement above our trigger threshold
+        // which renders the click(s) invalid
+        if (mouse.threshold < Math.abs(mouse.x - mouse.previousX) || mouse.threshold < Math.abs(mouse.y - mouse.previousY)) {
+            mouse.clickCount = 0;
+            return;
+        }
+
+        doClick();
     }
 
     // The actual mouse click handler
@@ -213,7 +255,6 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         var mx = mouse.x - mouse.offsetX;
         var my = mouse.y - mouse.offsetY;
 
-        var folderItem = {};
         var index = canTopData.renderItems.length;
 
         while (index--) {
@@ -234,29 +275,6 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         }
 
         mouse.clickCount = 0;
-    }
-
-    function recognizeDoubleClick() {
-        clearInterval(mouse.clickInterval);
-        mouse.clickInterval = null;
-
-        // Check if the mouse made a large movement above our trigger threshold
-        // which renders the click(s) invalid
-        if (mouse.threshold < Math.abs(mouse.x - mouse.previousX) || mouse.threshold < Math.abs(mouse.y - mouse.previousY)) {
-            mouse.clickCount = 0;
-            return;
-        }
-
-        doClick();
-    }
-
-    function checkClick(evt) {
-        mouse.clickCount++;
-        if (mouse.clickInterval === null) {
-            mouse.previousX = evt.clientX;
-            mouse.previousY = evt.clientY;
-            mouse.clickInterval = setInterval(recognizeDoubleClick, mouse.doubleClickSpeed);
-        }
     }
 
     // Render item creation functions
@@ -338,8 +356,9 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         mainloop();
     }
 
+    // Image loader check to see if a image has been completely loaded
     function checkLoaded() {
-        if (design.imageMap.src === "" || (design.imageMap.width !== 0 || design.imageMap.height !== 0 || design.imageMap.complete === true)) {
+        if (design.imageMap.src === "" || (design.imageMap.width !== 0 && design.imageMap.height !== 0 && design.imageMap.complete === true)) {
             clearInterval(loaderCheckInterval);
             initialized();
         }
