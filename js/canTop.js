@@ -458,10 +458,10 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             if (mouse.clickCount > 1) {
                 // Do something with the item here
                 lg("in two mouseclicks");
-                lg("Pressed item: " + activeItem.zOrder + " / " + pressedItem);
+                lg("Pressed item: " + activeItem.title + " / " + pressedItem);
             } else {
                 lg("in one mouseclick");
-                lg("Pressed item: " + activeItem.zOrder + " / " + pressedItem);
+                lg("Pressed item: " + activeItem.title + " / " + pressedItem);
 
                 if (mouse.clickCount === 0) {
                     if (pressedItem === "windowTitleBar") {
@@ -581,6 +581,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         createFolderItem("Briefcase", 20, 80);
         createWindow(design, "Window Testtitle - Window 1", 100, 100);
         createWindow(design, "Window Testtitle - Window 2", 420, 100);
+        createWindow(design, "Window Testtitle - Window 3", 100, 240);
 
         // Main loop
         function mainloop() {
@@ -590,6 +591,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
             drawQueueItem(0);
             drawQueueItem(1);
+            drawQueueItem(2);
 
             if (useDebug) {
                 drawGrid();
