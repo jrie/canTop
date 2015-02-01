@@ -397,46 +397,53 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         while (index--) {
             item = canTopData.renderQueue[index];
             if (mx >= item.x && mx <= (item.x + item.width) && my >= item.y && my <= (item.y + item.height)) {
-                if (mouse.clickCount > 1) {
-                    // Do something with the item here
-                    lg("in two mouseclicks")
-                } else {
-                    lg("in one mouseclicks")
-                    // DO someting else when there is only one click, like set it active
-                    hotSpot = item.hotSpots.length;
-                    var designItem = [];
-                    var designHotSpots = [];
-                    var pressedItem = false;
+                hotSpot = item.hotSpots.length;
+                var designItem = [];
+                var designHotSpots = [];
+                var pressedItem = false;
 
-                    while (hotSpot--) {
-                        designItem = design[item.hotSpots[hotSpot]];
-                        designHotSpots = getArrayCopy(designItem[6]);
+                while (hotSpot--) {
+                    designItem = design[item.hotSpots[hotSpot]];
+                    designHotSpots = getArrayCopy(designItem[6]);
 
-                        if (designItem[0] === "both") {
-                            if (designHotSpots[2] < item.width) {
-                                designHotSpots[2] = Math.round(designHotSpots[2] * (item.width / designHotSpots[2]));
-                            }
-
-                            if (designHotSpots[3] < item.height) {
-                                designHotSpots[3] = Math.round(designHotSpots[3] * (item.height / designHotSpots[3]));
-                            }
-                        } else if (designItem[0] === "x") {
+                    if (designItem[0] === "both") {
+                        if (designHotSpots[2] < item.width) {
                             designHotSpots[2] = Math.round(designHotSpots[2] * (item.width / designHotSpots[2]));
                         }
 
-                        designHotSpots[0] += item.x;
-                        designHotSpots[1] += item.y;
-                        designHotSpots[2] += item.x;
-                        designHotSpots[3] += item.y;
-
-                        if (mx >= designHotSpots[0] && mx <= designHotSpots[2] && my >= designHotSpots[1] && my <= designHotSpots[3]) {
-                            lg("Pressed item: " + item.hotSpots[hotSpot]);
-                            pressedItem = item.hotSpots[hotSpot];
-                            break;
+                        if (designHotSpots[3] < item.height) {
+                            designHotSpots[3] = Math.round(designHotSpots[3] * (item.height / designHotSpots[3]));
                         }
+                    } else if (designItem[0] === "x") {
+                        designHotSpots[2] = Math.round(designHotSpots[2] * (item.width / designHotSpots[2]));
                     }
 
-                    if (pressedItem) {
+                    designHotSpots[0] += item.x;
+                    designHotSpots[1] += item.y;
+                    designHotSpots[2] += item.x;
+                    designHotSpots[3] += item.y;
+
+                    if (mx >= designHotSpots[0] && mx <= designHotSpots[2] && my >= designHotSpots[1] && my <= designHotSpots[3]) {
+                        if (mouse.realiseMovement) {
+                            pressedItem = item.hotSpots[hotSpot];
+                        }
+
+                        // Testing brake, check with zOrder later to set the current
+                        // window active for example or leverage another window over
+                        // the current one
+                        break;
+                    }
+                }
+
+                if (pressedItem) {
+                    if (mouse.clickCount > 1) {
+                        // Do something with the item here
+                        lg("in two mouseclicks");
+                        lg("Pressed item: " + item.zOrder + " / " + pressedItem);
+                    } else {
+                        lg("in one mouseclick");
+                        lg("Pressed item: " + item.zOrder + " / " + pressedItem);
+
                         if (mouse.clickCount === 0) {
                             if (pressedItem === "windowTitleBar") {
                                 if (mouse.moveInterval === null) {
@@ -444,13 +451,14 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                                     mouse.previousY = mouse.y;
                                     mouse.moveInterval = setInterval(realiseMouseMovement, mouse.movementSpeed);
                                     mouse.activeItem = item;
+                                    return;
                                 }
                             }
+
                         }
                     }
                 }
 
-                break;
             }
         }
 
