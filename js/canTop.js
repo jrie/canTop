@@ -413,43 +413,42 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
         // Move the window on top of the stack and mark it active
         // degerade order index on stack by 1
-        if (zOrderIndex < canTopData.renderQueueSize) {
+        if (zOrderIndex !== -1) {
             canTopData.renderQueue[zOrderIndex].zOrder = canTopData.renderQueueSize - 1;
             canTopData.renderQueue.push(canTopData.renderQueue[zOrderIndex]);
             canTopData.renderQueue.splice(zOrderIndex, 1);
             index = canTopData.renderQueueSize - 1;
             while (index--) {
-                canTopData.renderQueue[index].zOrder--;
+                canTopData.renderQueue[index].zOrder = index;
             }
-        }
 
+            // Check the hotspots of the active window
+            hotSpot = activeItem.hotSpots.length;
+            while (hotSpot--) {
+                designItem = design[activeItem.hotSpots[hotSpot]];
+                designHotSpots = getArrayCopy(designItem[6]);
 
-        // Check the hotspots of the active window
-        hotSpot = activeItem.hotSpots.length;
-        while (hotSpot--) {
-            designItem = design[activeItem.hotSpots[hotSpot]];
-            designHotSpots = getArrayCopy(designItem[6]);
+                if (designItem[0] === "both") {
+                    if (designHotSpots[2] < activeItem.width) {
+                        designHotSpots[2] = Math.round(designHotSpots[2] * (activeItem.width / designHotSpots[2]));
+                    }
 
-            if (designItem[0] === "both") {
-                if (designHotSpots[2] < activeItem.width) {
+                    if (designHotSpots[3] < activeItem.height) {
+                        designHotSpots[3] = Math.round(designHotSpots[3] * (activeItem.height / designHotSpots[3]));
+                    }
+                } else if (designItem[0] === "x") {
                     designHotSpots[2] = Math.round(designHotSpots[2] * (activeItem.width / designHotSpots[2]));
                 }
 
-                if (designHotSpots[3] < activeItem.height) {
-                    designHotSpots[3] = Math.round(designHotSpots[3] * (activeItem.height / designHotSpots[3]));
-                }
-            } else if (designItem[0] === "x") {
-                designHotSpots[2] = Math.round(designHotSpots[2] * (activeItem.width / designHotSpots[2]));
-            }
+                designHotSpots[0] += activeItem.x;
+                designHotSpots[1] += activeItem.y;
+                designHotSpots[2] += activeItem.x;
+                designHotSpots[3] += activeItem.y;
 
-            designHotSpots[0] += activeItem.x;
-            designHotSpots[1] += activeItem.y;
-            designHotSpots[2] += activeItem.x;
-            designHotSpots[3] += activeItem.y;
-
-            if (mx >= designHotSpots[0] && mx <= designHotSpots[2] && my >= designHotSpots[1] && my <= designHotSpots[3]) {
-                if (mouse.realiseMovement) {
-                    pressedItem = activeItem.hotSpots[hotSpot];
+                if (mx >= designHotSpots[0] && mx <= designHotSpots[2] && my >= designHotSpots[1] && my <= designHotSpots[3]) {
+                    if (mouse.realiseMovement) {
+                        pressedItem = activeItem.hotSpots[hotSpot];
+                    }
                 }
             }
         }
