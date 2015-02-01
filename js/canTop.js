@@ -144,10 +144,10 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         var drawingCords = drawingDesign[5][drawingIndex];
                         var drawingSteps = drawingDesign[5][drawingIndex].length;
                         for (var cords = 0; cords < drawingSteps; cords += 2) {
-                            dc.lineTo(mouse.x + drawingCords[index] - mouse.offsetX, mouse.y + drawingCords[index + 1] - mouse.offsetY);
+                            dc.lineTo(item.x + drawingCords[cords], item.y + drawingCords[cords + 1]);
                         }
 
-                        dc.lineTo(mouse.x + drawingCords[0] - mouse.offsetX, mouse.y + drawingCords[1] - mouse.offsetY);
+                        dc.lineTo(item.x + drawingCords[cords][0], item.y + drawingCords[1]);
                         dc.closePath();
                         dc.fill();
                         break;
