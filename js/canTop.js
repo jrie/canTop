@@ -640,6 +640,13 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         canvas.addEventListener("click", checkClick);
         canvas.addEventListener("mousedown", checkMovement);
         canvas.addEventListener("mouseup", checkMovement);
+
+        // Get the right offset values after window resizing
+        window.addEventListener("resize", function () {
+            mouse.offsetX = canvas.offsetLeft;
+            mouse.offsetY = canvas.offsetTop;
+        });
+
         mainloop();
     }
 
