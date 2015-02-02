@@ -25,6 +25,47 @@ function getDesign(designName, width, heigth, gridX, gridY) {
     //var design = {};
     design.imageMap = new Image();
 
+    // Variables for helper functions
+    var cords = 0;
+    var cordSize = 0;
+    var minY = -1;
+    var minX = -1;
+    var maxX = -1;
+    var maxY = -1;
+
+    function pushBoundaries(item) {
+        cordSize = item[5].length;
+        for (var index = 0; index < cordSize; index++) {
+            if (item[2][index] === "line") {
+                if (minX < item[5][index][0]) {
+                    minX = item[5][index][0];
+                }
+
+                if (minY < item[5][index][1]) {
+                    minY = item[5][index][1];
+                }
+
+                cords = item[5][index].length;
+                for (var cord = 0; cord < cords; cord += 2) {
+                    if (item[5][index][cord] > minX) {
+                        maxX = item[5][index][cord];
+                    }
+
+                    if (item[5][index][cord + 1] > minY) {
+                        maxY = item[5][index][cord + 1];
+                    }
+                }
+            } else if (item[2][index] === "rect") {
+                minX = 0;
+                minY = 0;
+                maxX = item[5][index][2];
+                maxY = item[5][index][3];
+            }
+        }
+
+        item.push([minX, minY, maxX, maxY]);
+    }
+
     switch (designName) {
         case "template":
         default:
@@ -43,46 +84,14 @@ function getDesign(designName, width, heigth, gridX, gridY) {
 
             // Window prototype
             design.windowTitleBar = ["x", ["#fff", "#aeaeae"], ["rect"], ["gradient_bt"], [["#4a0000", "#1a0000", "#000"]], [[0, 0, 100, 17]]];
-            design.windowContent = ["both", ["#fff", "#aeaeae"], ["rect"], ["solid"], [["#2a0000"]], [[0, 18, 100, 150]]];
+            design.windowContent = ["both", ["#fff", "#aeaeae"], ["rect"], ["solid"], [["#2a0000"]], [[0, 17, 100, 150]]];
+            design.windowStatusBar = ["x", ["#fff", "#aeaeae"], ["rect"], ["solid"], [["#4a0000"]], [[0, 167, 100, 17]]];
             break;
-    }
-
-    var cords = 0;
-    var cordSize = 0;
-    var minY = -1;
-    var minX = -1;
-    var maxX = -1;
-    var maxY = -1;
-
-    function pushBoundaries(item) {
-        cordSize = item[5].length;
-        for (var index = 0; index < cordSize; index++) {
-            cords = item[5][index].length;
-
-            if (minX < item[5][index][0]) {
-                minX = item[5][index][0];
-            }
-
-            if (minY < item[5][index][1]) {
-                minY = item[5][index][1];
-            }
-
-            for (var cord = 0; cord < cords; cord += 2) {
-                if (item[5][index][cord] > minX) {
-                    maxX = item[5][index][cord];
-                }
-
-                if (item[5][index][cord + 1] > minY) {
-                    maxY = item[5][index][cord + 1];
-                }
-            }
-        }
-
-        item.push([minX, minY, maxX, maxY]);
     }
 
     pushBoundaries(design.windowTitleBar);
     pushBoundaries(design.windowContent);
+    pushBoundaries(design.windowStatusBar);
     return design;
 }
 
@@ -96,34 +105,11 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         var index = 0;
         var drawingDesign = [];
 
-        var dimensionX = 0;
-        var dimensionY = 0;
-        var offsetY = 0;
-
         while (index < drawingCount) {
             drawingDesign = design[item.drawingItems[index]];
 
             var drawingDimension = drawingDesign[0];
-            var sizeX = drawingDesign[6][2];
             var sizeY = drawingDesign[6][3];
-            dimensionX = sizeX;
-            dimensionY = sizeY;
-
-            if (drawingDimension === "both") {
-                if (sizeX < item.width) {
-                    dimensionX = item.width;
-                }
-
-                if (sizeY > item.height) {
-                    dimensionY = item.height - offsetY;
-                }
-            } else if (drawingDimension === "x") {
-                if (sizeX < item.width) {
-                    dimensionX = item.width;
-                }
-
-                offsetY += sizeY;
-            }
 
             for (var drawingIndex = 0; drawingIndex < drawingDesign[2].length; drawingIndex++) {
                 // Generarte the fill style
@@ -133,7 +119,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         dc.fillStyle = drawingDesign[4][drawingIndex][0];
                         break;
                     case "gradient":
-                        dc.fillStyle = createGradient(drawType[1], item.x, item.y, dimensionX, dimensionY, drawingDesign[4][drawingIndex]);
+                        dc.fillStyle = createGradient(drawType[1], item.x, item.y, item.width, sizeY, drawingDesign[4][drawingIndex]);
                         break
                 }
 
@@ -153,23 +139,30 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         break;
                     case "rect":
                     default:
-                        dc.strokeRect(item.x + drawingDesign[5][drawingIndex][0], item.y + drawingDesign[5][drawingIndex][1], dimensionX, dimensionY);
-                        dc.fillRect(item.x + drawingDesign[5][drawingIndex][0], item.y + drawingDesign[5][drawingIndex][1], dimensionX, dimensionY);
+                        dc.strokeRect(item.x + drawingDesign[5][drawingIndex][0], item.y + drawingDesign[5][drawingIndex][1], item.width, sizeY);
+                        dc.fillRect(item.x + drawingDesign[5][drawingIndex][0], item.y + drawingDesign[5][drawingIndex][1], item.width, sizeY);
                         break;
                 }
             }
 
 
             // If we have a item containing more information, we draw those hear
+            // Add the title to a window
             if (item.drawingItems[index] === "windowTitleBar") {
-                // Add the title
                 if (canTopData.activeWindow === item.title) {
                     dc.fillStyle = drawingDesign[1][0];
                 } else {
                     dc.fillStyle = drawingDesign[1][1];
                 }
                 dc.textAlign = "left";
-                dc.fillText(item.title, item.x + 5, item.y + 11);
+                dc.fillText(item.title, item.x + 5, item.y + item.hotSpotOffsetY[index] - 6);
+            }
+
+            // Add the count of items in this window
+            if (item.drawingItems[index] === "windowStatusBar") {
+                dc.fillStyle = drawingDesign[1][1];
+                dc.textAlign = "left";
+                dc.fillText(item.items.length + " item(s)", item.x + 5, item.y + item.hotSpotOffsetY[index] - 5);
             }
 
             index++;
@@ -182,16 +175,27 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     function createWindow(design, title, x, y) {
         var windowItem = {};
         windowItem.title = title;
-        windowItem.width = 300;
-        windowItem.height = 120;
         windowItem.x = x;
         windowItem.y = y;
         windowItem.zOrder = canTopData.renderQueueSize;
-        windowItem.drawingItems = ["windowTitleBar", "windowContent"];
-        windowItem.hotSpots = ["windowTitleBar", "windowContent"];
+        windowItem.drawingItems = ["windowTitleBar", "windowContent", "windowStatusBar"];
+        windowItem.hotSpots = ["windowTitleBar", "windowContent", "windowStatusBar"];
         windowItem.items = ["Item 1", "Item 2", "Item 3"];
         windowItem.style = "list";
         windowItem.type = "window";
+        windowItem.hotSpotOffsetY = [];
+        //windowItem.drawingCoords = [];
+
+        var offsetY = 0;
+        for (var index = 0; index < windowItem.hotSpots.length; index++) {
+            //windowItem.drawingCoords.push(getArrayCopy(design[windowItem.hotSpots[index]][6]));
+            offsetY += design[windowItem.hotSpots[index]][6][3];
+            windowItem.hotSpotOffsetY.push(offsetY);
+        }
+
+        windowItem.height = offsetY;
+        windowItem.width = 300;
+
         canTopData.renderQueue.push(windowItem);
         canTopData.renderQueueSize++;
     }
@@ -449,45 +453,32 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             hotSpot = activeItem.hotSpots.length;
             while (hotSpot--) {
                 designItem = design[activeItem.hotSpots[hotSpot]];
-                designHotSpots = getArrayCopy(designItem[6]);
+                designHotSpots = designItem[6];
 
-                if (designItem[0] === "both") {
-                    if (designHotSpots[2] < activeItem.width) {
-                        designHotSpots[2] = Math.round(designHotSpots[2] * (activeItem.width / designHotSpots[2]));
-                    }
-
-                    if (designHotSpots[3] < activeItem.height) {
-                        designHotSpots[3] = Math.round(designHotSpots[3] * (activeItem.height / designHotSpots[3]));
-                    }
-                } else if (designItem[0] === "x") {
-                    designHotSpots[2] = Math.round(designHotSpots[2] * (activeItem.width / designHotSpots[2]));
-                }
-
-                designHotSpots[0] += activeItem.x;
-                designHotSpots[1] += activeItem.y;
-                designHotSpots[2] += activeItem.x;
-                designHotSpots[3] += activeItem.y;
-
-                if (mx >= designHotSpots[0] && mx <= designHotSpots[2] && my >= designHotSpots[1] && my <= designHotSpots[3]) {
-                    if (mouse.realiseMovement) {
-                        pressedItem = activeItem.hotSpots[hotSpot];
-                    }
+                if (mx >= (designHotSpots[0] + activeItem.x) && mx <= (activeItem.width + activeItem.x) && my >= (designHotSpots[1] + activeItem.y) && my <= (activeItem.hotSpotOffsetY[hotSpot] + activeItem.y)) {
+                    pressedItem = activeItem.hotSpots[hotSpot];
                 }
             }
         }
 
         // Do something with the pressed Item
         if (pressedItem) {
+
             if (mouse.clickCount > 1) {
-                // Do something with the item here
+                // Double click counted
                 lg("in two mouseclicks");
                 lg("Pressed item: " + activeItem.title + " / " + pressedItem);
+
+                mouse.clickCount = 0;
                 return;
             } else {
-                lg("in one mouseclick");
-                lg("Pressed item: " + activeItem.title + " / " + pressedItem);
+                if (mouse.clickCount === 1) {
+                    // Single mouse click
+                    lg("in one mouseclick");
+                    lg("Pressed item: " + activeItem.title + " / " + pressedItem);
+                }
 
-                if (mouse.clickCount === 0) {
+                if (mouse.realiseMovement) {
                     if (pressedItem === "windowTitleBar") {
                         if (mouse.moveInterval === null) {
                             mouse.previousX = mouse.x;
@@ -497,8 +488,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         }
                         return;
                     }
-
                 }
+
             }
         }
 
@@ -530,12 +521,17 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     }
 
     // Mouse movement
-    function checkMovement(evt) {
+    function activateMovement(evt) {
         evt.preventDefault();
-        mouse.realiseMovement = !mouse.realiseMovement;
+        mouse.realiseMovement = true;
         if (evt.type === "mousedown") {
             doClick();
         }
+    }
+
+    function deactivateMovement(evt) {
+        evt.preventDefault();
+        mouse.realiseMovement = false;
     }
 
     function realiseMouseMovement() {
@@ -638,8 +634,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         });
 
         canvas.addEventListener("click", checkClick);
-        canvas.addEventListener("mousedown", checkMovement);
-        canvas.addEventListener("mouseup", checkMovement);
+        canvas.addEventListener("mousedown", activateMovement);
+        canvas.addEventListener("mouseup", deactivateMovement);
 
         // Get the right offset values after window resizing
         window.addEventListener("resize", function () {
