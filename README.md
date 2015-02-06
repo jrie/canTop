@@ -11,10 +11,11 @@ In canTop all designs are defined by the design object. The design object then d
 
 If the debug is set to active, also a grid and highlighted grid cells are drawn - tempting to do a minesweeper using this basement or a drawing app. But this feature is mostly done to allow later snapping of items to the grid, helper function to calculate grid to px and px to a grid position are implemented, the grid can be set to a custom value on init of canTop.
 
-Plans / toDos
+Plans / toDo's
 ======
+- Adding designs for the mouse then the default to show the action performed/performing
 - Adding a calculation to work with multiple growing elements inside a window instance, for now only one growing/shrinking element on xy-coords can be defined
-- Using the grid system, allowing of snapping of object
+- Using the grid system, allowing of snapping of objects
 - Writing a grid based drawing app, placed into the window content, to produce design template code in this format [["drawType1", "drawType2"], ["fillStyle1", "fillStyle2"], [["colorsA", "colorB"], ["colors2"]], [["drawing_coords1"], ["drawing_coords2]]]
 - Writing a minesweeper clone using the grid drawing system, allowing the window content to be used
 - Allowing to select and edit text right on the canvas of nearly all items
