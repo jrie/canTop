@@ -108,12 +108,14 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         var drawingCoords = [];
         var posX = 0;
         var posY = 0;
+        var sizeY = 0;
+        var dynamicCoords = [0, 0];
 
         while (index < drawingCount) {
             drawingDesign = design[item.drawingItems[index]];
             drawingCoords = item.drawData[index][1];
 
-            var sizeY = item.drawData[index][2][3];
+            sizeY = item.drawData[index][2][3];
 
             for (var drawingIndex = 0; drawingIndex < drawingCoords.length; drawingIndex++) {
                 // Generarte the fill style
@@ -123,9 +125,14 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         dc.fillStyle = drawingDesign[5][drawingIndex][0];
                         break;
                     case "gradient":
+
                         dc.fillStyle = createGradient(drawType[1], item.x, item.y, item.width, sizeY, drawingDesign[5][drawingIndex]);
                         break
                 }
+
+                dynamicCoords = getDynamicOffset(drawingDesign, item);
+                posX = dynamicCoords[0];
+                posY = dynamicCoords[1];
 
                 // Actual drawing
                 switch (drawingDesign[3][drawingIndex]) {
@@ -140,33 +147,9 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                             for (var cord = 0; cord < drawingSteps; cord += 2) {
                                 dc.lineTo(item.x + linePoints[cord], item.y + linePoints[cord + 1]);
                             }
-
                             dc.lineTo(item.x + linePoints[cord][0], item.y + linePoints[cord][1]);
 
-                        } else if (drawingDesign[0] === "dynamic") {
-                            if (drawingDesign[1] === "x") {
-                                posX = (drawingDesign[2][0] / 100) * item.width;
-                                posY = (drawingDesign[2][1]);
-                            } else if (drawingDesign[1] === "y") {
-                                posX = (drawingDesign[2][0]);
-                                posY = (drawingDesign[2][1] / 100) * item.height;
-                            } else if (drawingDesign[1] === "both") {
-                                if (drawingDesign[2][0] < 0) {
-                                    posX = item.width + drawingDesign[2][0];
-                                } else {
-                                    posX = drawingDesign[2][0];
-                                }
-
-                                if (drawingDesign[2][1] < 0) {
-                                    posY = item.height + drawingDesign[2][1];
-                                } else {
-                                    posY = drawingDesign[2][1];
-                                }
-                            } else {
-                                posX = 0;
-                                posY = 0;
-                            }
-
+                        } else {
                             for (var cord = 0; cord < drawingSteps; cord += 2) {
                                 dc.lineTo(item.x + posX + linePoints[cord], item.y + linePoints[cord + 1] + posY);
                             }
@@ -182,23 +165,9 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         if (drawingDesign[0] === "static") {
                             dc.strokeRect(item.x + drawingCoords[drawingIndex][0], item.y + drawingCoords[drawingIndex][1], item.width, sizeY);
                             dc.fillRect(item.x + drawingCoords[drawingIndex][0], item.y + drawingCoords[drawingIndex][1], item.width, sizeY);
-
-                        } else if (drawingDesign[0] === "dynamic") {
-                            if (drawingDesign[1] === "x") {
-                                var posX = (drawingDesign[2][0] / 100) * item.width;
-                                var posY = (drawingDesign[2][1]);
-                            } else if (drawingDesign[1] === "y") {
-                                var posX = (drawingDesign[2][0]);
-                                var posY = (drawingDesign[2][1] / 100) * item.height;
-                            } else if (drawingDesign[1] === "both") {
-                                posX = (drawingDesign[2][0] / 100) * item.width;
-                                posY = (drawingDesign[2][1] / 100) * item.height;
-                            } else {
-                                posX = 0;
-                                posY = 0;
-                            }
-                            dc.strokeRect(item.x + posX + drawingCoords[drawingIndex][0], item.y + posY + drawingCoords[drawingIndex][1], item.width, sizeY);
-                            dc.fillRect(item.x + posX + drawingCoords[drawingIndex][0], item.y + posY + drawingCoords[drawingIndex][1], item.width, sizeY);
+                        } else {
+                            dc.strokeRect(item.x + posX + drawingCoords[drawingIndex][0], item.y + posY + drawingCoords[drawingIndex][1], drawingCoords[drawingIndex][2], drawingCoords[drawingIndex][3]);
+                            dc.fillRect(item.x + posX + drawingCoords[drawingIndex][0], item.y + posY + drawingCoords[drawingIndex][1], drawingCoords[drawingIndex][2], drawingCoords[drawingIndex][3]);
                         }
                         break;
                 }
@@ -360,6 +329,50 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         }
 
         return arrayCopy;
+    }
+
+
+    // Get positioning if it applies
+    function getDynamicOffset(drawingDesign, item) {
+        var posX = 0;
+        var posY = 0;
+        if (drawingDesign[0] === "dynamic") {
+            if (drawingDesign[1] === "x") {
+                if (drawingDesign[2][0] < 0) {
+                    posX = item.width + drawingDesign[2][0];
+                } else {
+                    posX = drawingDesign[2][0];
+                }
+
+                posY = drawingDesign[2][1];
+            } else if (drawingDesign[1] === "y") {
+                posX = (drawingDesign[2][0]);
+
+                if (drawingDesign[2][1] < 0) {
+                    posY = item.height + drawingDesign[2][1];
+                } else {
+                    posY = drawingDesign[2][1];
+                }
+
+            } else if (drawingDesign[1] === "both") {
+                if (drawingDesign[2][0] < 0) {
+                    posX = item.width + drawingDesign[2][0];
+                } else {
+                    posX = drawingDesign[2][0];
+                }
+
+                if (drawingDesign[2][1] < 0) {
+                    posY = item.height + drawingDesign[2][1];
+                } else {
+                    posY = drawingDesign[2][1];
+                }
+            } else {
+                posX = 0;
+                posY = 0;
+            }
+        }
+
+        return [posX, posY];
     }
 
     // Calculate mouse px to grid
@@ -531,6 +544,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             var drawingCoords = [];
             var posX = 0;
             var posY = 0;
+            var dynamicCoords = [0, 0];
 
             while (hotSpot--) {
                 var drawDataSize = activeItem.drawData.length;
@@ -546,6 +560,10 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                 dc.beginPath();
                 for (var drawingIndex = 0; drawingIndex < drawingDesign[3].length; drawingIndex++) {
 
+                    dynamicCoords = getDynamicOffset(drawingDesign, activeItem);
+                    posX = dynamicCoords[0];
+                    posY = dynamicCoords[1];
+
                     // Phantom drawing
                     switch (drawingDesign[3][0]) {
                         case "line":
@@ -560,30 +578,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
                                 dc.lineTo(activeItem.x + linePoints[cord][0], activeItem.y + linePoints[cord][1]);
 
-                            } else if (drawingDesign[0] === "dynamic") {
-                                if (drawingDesign[1] === "x") {
-                                    posX = (drawingDesign[2][0] / 100) * activeItem.width;
-                                    posY = (drawingDesign[2][1]);
-                                } else if (drawingDesign[1] === "y") {
-                                    posX = (drawingDesign[2][0]);
-                                    posY = (drawingDesign[2][1] / 100) * activeItem.height;
-                                } else if (drawingDesign[1] === "both") {
-                                    if (drawingDesign[2][0] < 0) {
-                                        posX = activeItem.width + drawingDesign[2][0];
-                                    } else {
-                                        posX = drawingDesign[2][0];
-                                    }
-
-                                    if (drawingDesign[2][1] < 0) {
-                                        posY = activeItem.height + drawingDesign[2][1];
-                                    } else {
-                                        posY = drawingDesign[2][1];
-                                    }
-                                } else {
-                                    posX = 0;
-                                    posY = 0;
-                                }
-
+                            } else {
                                 dc.moveTo(activeItem.x + posX + linePoints[0], activeItem.x + posY + linePoints[1]);
                                 for (var cord = 0; cord < drawingSteps; cord += 2) {
                                     dc.lineTo(activeItem.x + posX + linePoints[cord], activeItem.y + posY + linePoints[cord + 1]);
@@ -594,27 +589,10 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
                         case "rect":
                         default:
-                            var sizeY = activeItem.drawData[index][2][3];
-
                             if (drawingDesign[0] === "static") {
-                                dc.rect(activeItem.x + drawingCoords[drawingIndex][0], activeItem.y + drawingCoords[drawingIndex][1], activeItem.width, sizeY);
-
-                            } else if (drawingDesign[0] === "dynamic") {
-                                if (drawingDesign[1] === "x") {
-                                    posX = (drawingDesign[2][0] / 100) * activeItem.width;
-                                    posY = (drawingDesign[2][1]);
-                                } else if (drawingDesign[1] === "y") {
-                                    posX = (drawingDesign[2][0]);
-                                    posY = (drawingDesign[2][1] / 100) * activeItem.height;
-                                } else if (drawingDesign[2][0] === "both") {
-                                    posX = (drawingDesign[2][0] / 100) * activeItem.width;
-                                    posY = (drawingDesign[2][1] / 100) * activeItem.height;
-                                } else {
-                                    posX = 0;
-                                    posY = 0;
-                                }
-
-                                dc.rect(activeItem.x + posX + drawingCoords[drawingIndex][0], activeItem.y + posY + drawingCoords[drawingIndex][1], activeItem.width, sizeY);
+                                dc.rect(activeItem.x + drawingCoords[drawingIndex][0], activeItem.y + drawingCoords[drawingIndex][1], activeItem.width, activeItem.drawData[index][2][3]);
+                            } else {
+                                dc.rect(activeItem.x + posX + drawingCoords[drawingIndex][0], activeItem.y + posY + drawingCoords[drawingIndex][1], drawingCoords[drawingIndex][2], drawingCoords[drawingIndex][3]);
                             }
                             break;
                     }
