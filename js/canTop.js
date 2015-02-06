@@ -86,7 +86,12 @@ function getDesign(designName, width, heigth, gridX, gridY) {
             design.windowTitleBar = ["static", "x", ["#fff", "#aeaeae"], ["rect"], ["gradient_bt"], [["#4a0000", "#1a0000", "#000"]], [[0, 0, 100, 17]]];
             design.windowContent = ["static", "both", ["#fff", "#aeaeae"], ["rect"], ["solid"], [["#2a0000"]], [[0, 17, 100, 150]]];
             design.windowStatusBar = ["static", "x", ["#fff", "#aeaeae"], ["rect"], ["solid"], [["#4a0000"]], [[0, 167, 100, 17]]];
-            design.windowResize = ["dynamic", "both", [-12, -12], ["line", "line"], ["solid", "solid"], [["#aeaeae"], ["#dedede"]], [[10, 0, 10, 10, 0, 10, 10, 0], [8, 2, 8, 8, 2, 8, 8, 2]]];
+
+            // Window controls
+            design.windowResize = ["dynamic", "both", [-12, -12], ["line", "line"], ["solid", "solid"], [["#222"], ["#fff"]], [[10, 0, 10, 10, 0, 10, 10, 0], [8, 2, 8, 8, 2, 8, 8, 2]]];
+            design.windowMaximize = ["dynamic", "both", [-36, 3], ["rect", "rect", "rect"], ["solid", "solid", "solid"], [["#dedede"], ["#aeaeae"], ["#333"]], [[0, 0, 10, 10], [2, 2, 6, 6], [2, 3, 6, 5]]];
+            design.windowMinimize = ["dynamic", "both", [-24, 3], ["rect", "rect", "rect"], ["solid", "solid", "solid"], [["#dedede"], ["#aeaeae"], ["#333"]], [[0, 0, 10, 10], [2, 2, 6, 6], [2, 6, 6, 2]]];
+            design.windowClose = ["dynamic", "both", [-12, 3], ["rect", "rect", "line", "line"], ["solid", "solid", "stroke", "stroke"], [["#dedede"], ["#aeaeae"], ["#333"], ["#333"]], [[0, 0, 10, 10], [2, 2, 6, 6], [2, 2, 8, 8], [2, 8, 8, 2]]];
             break;
     }
 
@@ -125,9 +130,11 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         dc.fillStyle = drawingDesign[5][drawingIndex][0];
                         break;
                     case "gradient":
-
                         dc.fillStyle = createGradient(drawType[1], item.x, item.y, item.width, sizeY, drawingDesign[5][drawingIndex]);
-                        break
+                        break;
+                    case "stroke":
+                        dc.strokeStyle = drawingDesign[5][drawingIndex][0];
+                        break;
                 }
 
                 dynamicCoords = getDynamicOffset(drawingDesign, item);
@@ -150,8 +157,16 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                             dc.lineTo(item.x + linePoints[cord][0], item.y + linePoints[cord][1]);
 
                         } else {
-                            for (var cord = 0; cord < drawingSteps; cord += 2) {
-                                dc.lineTo(item.x + posX + linePoints[cord], item.y + linePoints[cord + 1] + posY);
+                            if (linePoints.length > 4) {
+                                for (var cord = 0; cord < drawingSteps; cord += 2) {
+                                    dc.lineTo(item.x + posX + linePoints[cord], item.y + posY + linePoints[cord + 1]);
+                                }
+                            } else {
+                                dc.lineWidth = 1;
+                                dc.lineTo(item.x + posX + linePoints[0], item.y + posY + linePoints[1]);
+                                dc.lineTo(item.x + posX + linePoints[2], item.y + posY + linePoints[3]);
+                                dc.stroke();
+                                dc.strokeStyle = "#000";
                             }
                         }
 
@@ -206,8 +221,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         windowItem.x = x;
         windowItem.y = y;
         windowItem.zOrder = canTopData.renderQueueSize;
-        windowItem.drawingItems = ["windowTitleBar", "windowContent", "windowStatusBar", "windowResize"];
-        windowItem.hotSpots = ["windowTitleBar", "windowContent", "windowStatusBar", "windowResize"];
+        windowItem.drawingItems = ["windowTitleBar", "windowContent", "windowStatusBar", "windowResize", "windowClose", "windowMaximize", "windowMinimize"];
+        windowItem.hotSpots = ["windowTitleBar", "windowContent", "windowStatusBar", "windowResize", "windowClose", "windowMaximize", "windowMinimize"];
         windowItem.items = ["Item 1", "Item 2", "Item 3"];
         windowItem.style = "list";
         windowItem.type = "window";
@@ -772,7 +787,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                             }
                         }
                     } else if (drawDesign[1] === "x") {
-                        if (index + 1 === mouse.activeItem.drawData.length - 1) {
+                        if (index > 1) {
                             usedPixels += drawData[1][0][3];
                         }
                         drawData[1][0][1] = height - usedPixels;
