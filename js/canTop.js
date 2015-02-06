@@ -228,6 +228,11 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         windowItem.type = "window";
         windowItem.hotSpotOffsetY = [];
         windowItem.drawData = [];
+        windowItem.isMinimized = false;
+        windowItem.isMaximized = false;
+        windowItem.oldX = x;
+        windowItem.oldY = y;
+
 
         var offsetY = 0;
         var dimensions = [];
@@ -244,8 +249,11 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             windowItem.drawData.push([windowItem.drawingItems[index], drawingCoords, dimensions]);
         }
 
-        windowItem.height = offsetY;
         windowItem.width = 300;
+        windowItem.height = offsetY;
+
+        windowItem.oldWidth = windowItem.width;
+        windowItem.oldHeight = windowItem.height;
 
         canTopData.renderQueue.push(windowItem);
         canTopData.renderQueueSize++;
@@ -442,8 +450,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             stepX += gridX;
         }
 
-        dc.stroke();
         dc.closePath();
+        dc.stroke();
     }
 
     function drawActiveCell() {
@@ -520,8 +528,6 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         var zOrderIndex = -1;
 
         var index = 0;
-
-        var designItem = [];
         var pressedItem = false;
 
         // Reset the active selection on click and select later
@@ -639,11 +645,37 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                     // Single mouse click
                     lg("in one mouseclick");
                     lg("Pressed item: " + activeItem.title + " / " + pressedItem);
+
+                    if (pressedItem === "windowMaximize") {
+                        var newWidth = 0;
+                        var newHeight = 0;
+                        if (!activeItem.isMaximized) {
+                            // Store values before maximizing the window
+                            activeItem.oldX = activeItem.x;
+                            activeItem.oldY = activeItem.y;
+                            activeItem.oldWidth = activeItem.width;
+                            activeItem.oldHeight = activeItem.height;
+
+                            activeItem.x = 0;
+                            activeItem.y = 0;
+                            activeItem.isMaximized = true;
+                            newWidth = canvas.width;
+                            newHeight = canvas.height;
+                        } else {
+                            // Restore saved values on demaximizing
+                            activeItem.x = activeItem.oldX;
+                            activeItem.y = activeItem.oldY;
+                            activeItem.isMaximized = false;
+                            newWidth = activeItem.oldWidth;
+                            newHeight = activeItem.oldHeight;
+                        }
+                        resizeWindowItem(activeItem, newWidth, newHeight);
+                    }
                 }
 
                 if (mouse.realiseMovement) {
                     if (pressedItem === "windowTitleBar") {
-                        if (mouse.moveInterval === null) {
+                        if (mouse.moveInterval === null && !activeItem.isMaximized) {
                             mouse.previousX = mouse.x;
                             mouse.previousY = mouse.y;
                             mouse.moveInterval = setInterval(realiseMouseMovement, mouse.movementSpeed);
@@ -747,54 +779,54 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
             mouse.previousX = mouse.x;
             mouse.previousY = mouse.y;
+            resizeWindowItem(mouse.activeItem, width, height);
+        }
+    }
 
-            mouse.activeItem.width = width;
-            mouse.activeItem.height = height;
+    function resizeWindowItem(activeItem, newWidth, newHeight) {
+        var drawData = [];
+        var drawItems = activeItem.drawData.length;
+        var drawDesign = [];
+        var drawIndexes = 0;
+        var usedPixels = 0;
+        var index = 0;
+        var hotSpotOffsetY = activeItem.hotSpotOffsetY;
+        var offsetsY = activeItem.hotSpotOffsetY.length;
+        activeItem.width = newWidth;
+        activeItem.height = newHeight;
 
+        for (index = 0; index < drawItems; index++) {
 
+            drawData = activeItem.drawData[index];
 
-            var drawData = [];
-            var drawItems = mouse.activeItem.drawData.length;
-            var drawDesign = [];
-            var drawIndexes = 0;
-            var hotSpotOffsetY = [];
-            var usedPixels = 0;
-            var index = 0;
+            drawDesign = design[drawData[0]];
+            drawIndexes = drawDesign[3].length;
 
-            for (index = 0; index < drawItems; index++) {
-                drawData = mouse.activeItem.drawData[index];
-                hotSpotOffsetY = mouse.activeItem.hotSpotOffsetY;
-
-                drawDesign = design[drawData[0]];
-                drawIndexes = drawDesign[3].length;
-
-                usedPixels = height;
-                for (var subIndex = 0; subIndex < hotSpotOffsetY.length; subIndex++) {
-                    if (index !== subIndex) {
-                        usedPixels -= hotSpotOffsetY[subIndex];
-                    } else {
-                        break;
-                    }
+            usedPixels = newHeight;
+            for (var subIndex = 0; subIndex < offsetsY; subIndex++) {
+                if (index !== subIndex) {
+                    usedPixels -= hotSpotOffsetY[subIndex];
+                } else {
+                    break;
                 }
+            }
 
-                if (drawDesign[0] === "static") {
-                    if (drawDesign[1] === "both") {
-                        while (drawIndexes--) {
-                            if (drawDesign[3][drawIndexes] === "rect") {
-                                drawData[1][0][3] = usedPixels;
-                                drawData[2][3] = usedPixels;
-                                hotSpotOffsetY[index] = usedPixels;
-                            }
+            if (drawDesign[0] === "static") {
+                if (drawDesign[1] === "both") {
+                    while (drawIndexes--) {
+                        if (drawDesign[3][drawIndexes] === "rect") {
+                            drawData[1][0][3] = usedPixels;
+                            drawData[2][3] = usedPixels;
+                            hotSpotOffsetY[index] = usedPixels;
                         }
-                    } else if (drawDesign[1] === "x") {
-                        if (index > 1) {
-                            usedPixels += drawData[1][0][3];
-                        }
-                        drawData[1][0][1] = height - usedPixels;
-                        drawData[2][1] = usedPixels;
                     }
+                } else if (drawDesign[1] === "x") {
+                    if (index > 1) {
+                        usedPixels += drawData[1][0][3];
+                    }
+                    drawData[1][0][1] = newHeight - usedPixels;
+                    drawData[2][1] = usedPixels;
                 }
-
             }
         }
     }
