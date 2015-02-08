@@ -380,7 +380,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     mouse.y = 0;
     mouse.previousX = 0;
     mouse.previousY = 0;
-    mouse.threshold = 20;
+    // The threshold counts the pixels the mouse can offset from its initial click position so the click is still counted
+    mouse.threshold = 25;
     mouse.offsetX = canvas.offsetLeft;
     mouse.offsetY = canvas.offsetTop;
     mouse.current = "default";
