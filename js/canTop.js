@@ -468,6 +468,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             dummyItems.push([0, "Folder Item " + item, [[parseInt(month), parseInt(day), year, date], [hours, minutes, seconds, time], dataIndex]]);
         }
 
+
         lg(dummyItems[0]);
 
         // Create files
@@ -478,7 +479,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             dummyItems.push([1, "File Item " + item, [[parseInt(month), parseInt(day), year, date], [hours, minutes, seconds, time], parseFloat(fileSize.toFixed(2))]]);
         }
 
-        lg(dummyItems[fileItems]);
+        lg(dummyItems[folderItems]);
 
 
         return dummyItems;
