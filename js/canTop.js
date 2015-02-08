@@ -94,7 +94,7 @@ function getDesign(designName, width, heigth, gridX, gridY) {
             design.windowClose = ["dynamic", "both", [-12, 3], ["rect", "rect", "line", "line"], ["solid", "solid", "stroke", "stroke"], [["#dedede"], ["#aeaeae"], ["#333"], ["#333"]], [[0, 0, 10, 10], [2, 2, 6, 6], [2, 2, 8, 8], [2, 8, 8, 2]]];
 
             // Window contents
-            design.contentScrollbar = [["rect", "rect"], ["solid", "solid"], [["#aaa"]], [[0, 0, 12, 100]], -12, 0];
+            design.contentScrollbar = [["rect"], ["solid"], [["#aaa"]], [[0, 0, 12, 100]], -12, 0];
             design.contentScrollbarPlugY = [["rect"], ["solid"], [["#dedede"]], [[0, 0, 6, 15]], 3, 0];
             break;
     }
@@ -316,14 +316,14 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             // Prepare the item X and Y coordinate
             if (parent === -1) {
                 if (contentItem[2] === "x") {
-                    itemX = windowItem.contentArea[1] + designItem[4];
+                    itemX = windowItem.contentArea[2] + designItem[4];
                     itemY = spaceY;
                 } else if (contentItem[2] === "y") {
                     itemX = spaceX;
-                    itemY = windowItem.contentArea[1] + designItem[5];
+                    itemY = windowItem.contentArea[3] + designItem[5];
                 } else if (contentItem[2] === "both") {
-                    itemX = windowItem.contentArea[1] + designItem[4];
-                    itemY = windowItem.contentArea[1] + designItem[5];
+                    itemX = windowItem.contentArea[2] + designItem[4];
+                    itemY = windowItem.contentArea[3] + designItem[5];
                 }
             } else {
                 if (contentItem[2] === "x") {
@@ -356,6 +356,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
         }
         lg("--------------------------------------------------");
+        lg(windowItem.contentItems);
         lg(windowItem.contentArea)
         lg(windowItem.contentBoundaries);
         lg(windowItem.contentHotSpots);
@@ -1064,6 +1065,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     function renderWindowContent(queueItem) {
         var windowItem = canTopData.renderQueue[queueItem];
         /*
+         lg(windowItem.contentItems);
          lg(windowItem.contentArea)
          lg(windowItem.contentBoundaries);
          lg(windowItem.contentHotSpots);
@@ -1072,12 +1074,13 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
          lg(windowItem.contentActions);
          lg(windowItem.items);
          */
+        var items = windowItem.contentItems;
         var contentArea = windowItem.contentArea;
         var boundaries = windowItem.contentBoundaries;
         var hotSpots = windowItem.contentHotSpots;
         var data = windowItem.contentData;
         var actions = windowItem.contentActions;
-        var items = windowItem.items;
+        var windowItems = windowItem.items;
     }
 
     // Main function executes after desktop imagemap has been loaded
