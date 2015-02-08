@@ -110,7 +110,7 @@ function getDesign(designName, width, heigth, gridX, gridY) {
     return design;
 }
 
-function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMouse, useDebug) {
+function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMouse, snapToEdges, useDebug) {
 
     window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.oRequestAnimationFrame;
 
@@ -858,6 +858,20 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             mouse.activeItem.y -= mouse.previousY - mouse.y;
             mouse.previousX = mouse.x;
             mouse.previousY = mouse.y;
+
+            if (snapToEdges) {
+                if (mouse.activeItem.x <= 0) {
+                    mouse.activeItem.x = 0;
+                } else if (mouse.activeItem.x + mouse.activeItem.width >= canvas.width) {
+                    mouse.activeItem.x = canvas.width - mouse.activeItem.width;
+                }
+
+                if (mouse.activeItem.y <= 0) {
+                    mouse.activeItem.y = 0;
+                } else if (mouse.activeItem.y + mouse.activeItem.height >= canvas.height) {
+                    mouse.activeItem.y = canvas.height - mouse.activeItem.height;
+                }
+            }
         }
     }
 
@@ -881,6 +895,16 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
             if (height < 150) {
                 height = mouse.activeItem.height;
+            }
+
+            if (snapToEdges) {
+                if (width > mouse.activeItem.width && (mouse.activeItem.width + mouse.activeItem.x) >= canvas.width) {
+                    width = canvas.width - mouse.activeItem.x;
+                }
+
+                if (height > mouse.activeItem.height && (mouse.activeItem.height + mouse.activeItem.y) >= canvas.height) {
+                    height = canvas.height - mouse.activeItem.y;
+                }
             }
 
             mouse.previousX = mouse.x;
@@ -1030,6 +1054,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         canvas.addEventListener("click", checkClick);
         canvas.addEventListener("mousedown", activateMovement);
         canvas.addEventListener("mouseup", deactivateMovement);
+        canvas.addEventListener("mouseout", deactivateMovement);
 
         // Get the right offset values after window resizing
         window.addEventListener("resize", function () {
