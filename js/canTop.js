@@ -740,8 +740,9 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
         // Do something with the pressed Item
         if (pressedItem) {
-
             if (mouse.clickCount > 1) {
+                clearInterval(mouse.clickInternval);
+                mouse.clickInternval = null;
                 // Double click counted
                 lg("in two mouseclicks");
                 lg("Pressed item: " + activeItem.title + " / " + pressedItem);
@@ -820,6 +821,9 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             item = canTopData.renderItems[index];
             if (mx >= item.x && mx <= (item.x + item.width) && my >= item.y && my <= (item.y + item.height)) {
                 if (mouse.clickCount > 1) {
+                    clearInterval(mouse.clickInternval);
+                    mouse.clickInternval = null;
+
                     if (item.type === 0) {
                         item.open = !item.open;
                     }
