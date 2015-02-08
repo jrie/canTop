@@ -33,33 +33,33 @@ function getDesign(designName, width, heigth, gridX, gridY) {
     var maxX = -1;
     var maxY = -1;
 
-    function pushBoundaries(item) {
-        cordSize = item[6].length;
+    function pushBoundaries(item, styleOffset, coordOffset) {
+        cordSize = item[coordOffset].length;
         for (var index = 0; index < cordSize; index++) {
-            if (item[3][index] === "line") {
-                if (minX < item[6][index][0]) {
-                    minX = item[6][index][0];
+            if (item[styleOffset][index] === "line") {
+                if (minX < item[coordOffset][index][0]) {
+                    minX = item[coordOffset][index][0];
                 }
 
-                if (minY < item[6][index][1]) {
-                    minY = item[6][index][1];
+                if (minY < item[coordOffset][index][1]) {
+                    minY = item[coordOffset][index][1];
                 }
 
-                cords = item[6][index].length;
+                cords = item[coordOffset][index].length;
                 for (var cord = 0; cord < cords; cord += 2) {
-                    if (item[6][index][cord] > minX) {
-                        maxX = item[6][index][cord];
+                    if (item[coordOffset][index][cord] > minX) {
+                        maxX = item[coordOffset][index][cord];
                     }
 
-                    if (item[6][index][cord + 1] > minY) {
-                        maxY = item[6][index][cord + 1];
+                    if (item[coordOffset][index][cord + 1] > minY) {
+                        maxY = item[coordOffset][index][cord + 1];
                     }
                 }
-            } else if (item[3][index] === "rect") {
+            } else if (item[styleOffset][index] === "rect") {
                 minX = 0;
                 minY = 0;
-                maxX = item[6][index][2];
-                maxY = item[6][index][3];
+                maxX = item[coordOffset][index][2];
+                maxY = item[coordOffset][index][3];
             }
         }
 
@@ -92,12 +92,21 @@ function getDesign(designName, width, heigth, gridX, gridY) {
             design.windowMaximize = ["dynamic", "both", [-36, 3], ["rect", "rect", "rect"], ["solid", "solid", "solid"], [["#dedede"], ["#aeaeae"], ["#333"]], [[0, 0, 10, 10], [2, 2, 6, 6], [2, 3, 6, 5]]];
             design.windowMinimize = ["dynamic", "both", [-24, 3], ["rect", "rect", "rect"], ["solid", "solid", "solid"], [["#dedede"], ["#aeaeae"], ["#333"]], [[0, 0, 10, 10], [2, 2, 6, 6], [2, 6, 6, 2]]];
             design.windowClose = ["dynamic", "both", [-12, 3], ["rect", "rect", "line", "line"], ["solid", "solid", "stroke", "stroke"], [["#dedede"], ["#aeaeae"], ["#333"], ["#333"]], [[0, 0, 10, 10], [2, 2, 6, 6], [2, 2, 8, 8], [2, 8, 8, 2]]];
+
+            // Window contents
+            design.contentScrollbar = [["rect", "rect"], ["solid", "solid"], [["#aaa"]], [[0, 0, 12, 100]], -12, 0];
+            design.contentScrollbarPlugY = [["rect"], ["solid"], [["#dedede"]], [[0, 0, 6, 15]], 3, 0];
             break;
     }
 
-    pushBoundaries(design.windowTitleBar);
-    pushBoundaries(design.windowContent);
-    pushBoundaries(design.windowStatusBar);
+    // Get the boundaries for the design items listed below and push it at end of the design
+    pushBoundaries(design.windowTitleBar, 3, 6);
+    pushBoundaries(design.windowContent, 3, 6);
+    pushBoundaries(design.windowStatusBar, 3, 6);
+
+    pushBoundaries(design.contentScrollbar, 0, 3);
+    pushBoundaries(design.contentScrollbarPlugY, 0, 3);
+
     return design;
 }
 
@@ -233,7 +242,6 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         windowItem.oldX = x;
         windowItem.oldY = y;
 
-
         var offsetY = 0;
         var dimensions = [];
         var drawingCoords = [];
@@ -254,6 +262,102 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
         windowItem.oldWidth = windowItem.width;
         windowItem.oldHeight = windowItem.height;
+
+        windowItem.contentArea = [windowItem.drawData[1][2][2], windowItem.drawData[1][2][3]];
+
+        // itemDesign, parent, positioningOn, fill-axis, action, datafield, datatype, initialValue, datastep
+        windowItem.contentItems = [["contentScrollbar", -1, "x", "fillY", false, false], ["contentScrollbarPlugY", 0, "x", "none", "scrollY", "percent", 0, 1, 0.1]];
+        windowItem.contentBoundaries = [];
+        windowItem.contentHotSpots = [];
+        windowItem.contentData = [];
+        windowItem.contentActions = [];
+
+        var contentItem = [];
+        var designItem = [];
+        var itemX = 0;
+        var itemY = 0;
+        var itemWidth = 0;
+        var itemHeight = 0;
+
+        var spaceX = windowItem.contentArea[0];
+        var spaceY = windowItem.contentArea[1];
+
+        var parent = -1;
+        for (index = 0; index < windowItem.contentItems.length; index++) {
+            contentItem = windowItem.contentItems[index];
+            designItem = design[contentItem[0]];
+
+            parent = contentItem[1];
+
+            // Define the height of the element based on the fillstyle
+            // In case there is no parent set, deduct the available space of the content area
+            if (contentItem[3] === "fillY") {
+                itemWidth = designItem[6][2];
+                itemHeight = spaceY;
+
+                if (parent === -1) {
+                    spaceX -= itemWidth;
+                }
+
+            } else if (contentItem[3] === "fillX") {
+                itemWidth = spaceX;
+                itemHeight = designItem[6][1];
+
+                if (parent === -1) {
+                    spaceY -= itemHeight;
+                }
+            } else {
+                itemWidth = designItem[6][2];
+                itemHeight = designItem[6][3];
+            }
+
+            // Prepare the item X and Y coordinate
+            if (parent === -1) {
+                if (contentItem[2] === "x") {
+                    itemX = windowItem.contentArea[1] + designItem[4];
+                    itemY = spaceY;
+                } else if (contentItem[2] === "y") {
+                    itemX = spaceX;
+                    itemY = windowItem.contentArea[1] + designItem[5];
+                } else if (contentItem[2] === "both") {
+                    itemX = windowItem.contentArea[1] + designItem[4];
+                    itemY = windowItem.contentArea[1] + designItem[5];
+                }
+            } else {
+                if (contentItem[2] === "x") {
+                    itemX = windowItem.contentBoundaries[parent][0] + designItem[4];
+                    itemY = 0;
+                } else if (contentItem[2] === "y") {
+                    itemX = 0;
+                    itemY = windowItem.contentBoundaries[parent][1] + designItem[5];
+                } else if (contentItem[2] === "both") {
+                    itemX = windowItem.contentBoundaries[parent][0] + designItem[5];
+                    itemY = windowItem.contentBoundaries[parent][1] + designItem[5];
+                }
+            }
+
+            // Add the item dimensions and spacing onto the content drawing list for rendering
+            windowItem.contentBoundaries.push([itemX, itemY, itemWidth, itemHeight]);
+
+            // Check if this item has a action combined to it and push the index and action on the actionData stack
+            if (contentItem[4] !== false) {
+                windowItem.contentActions.push([index, contentItem[4]]);
+
+                if (contentItem[5] === "number" || contentItem[5] === "percent") {
+                    windowItem.contentData.push([index, contentItem[6], contentItem[7], contentItem[8]]);
+                } else {
+                    windowItem.contentData.push([index, contentItem[6], contentItem[7], false]);
+                }
+
+                windowItem.contentHotSpots.push(index);
+            }
+
+        }
+        lg("--------------------------------------------------");
+        lg(windowItem.contentBoundaries);
+        lg(windowItem.contentHotSpots);
+        lg(windowItem.contentData);
+        lg(windowItem.contentActions);
 
         canTopData.renderQueue.push(windowItem);
         canTopData.renderQueueSize++;
@@ -282,11 +386,11 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     mouse.current = "default";
     mouse.clickCount = 0;
     mouse.clickInterval = null;
-    mouse.doubleClickSpeed = 320;
+    mouse.doubleClickSpeed = 220;
 
     mouse.realiseMovement = false;
     mouse.moveInterval = null;
-    mouse.movementSpeed = 5;
+    mouse.movementSpeed = 100 / 60;
 
     mouse.activeItem = null;
 
@@ -339,10 +443,12 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     function getArrayCopy(arrayItem) {
         var arrayCopy = [];
         var items = arrayItem.length;
+        var arraySubItems = 0;
         for (var index = 0; index < items; index++) {
             if (typeof (arrayItem[index]) === "object") {
                 var subArray = [];
-                for (var subIndex = 0; subIndex < arrayItem[index].length; subIndex++) {
+                arraySubItems = arrayItem[index].length;
+                for (var subIndex = 0; subIndex < arraySubItems; subIndex++) {
                     subArray.push(arrayItem[index][subIndex]);
                 }
                 arrayCopy.push(subArray);
@@ -783,6 +889,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         }
     }
 
+    // Interactions
     function resizeWindowItem(activeItem, newWidth, newHeight) {
         var drawData = [];
         var drawItems = activeItem.drawData.length;
@@ -846,7 +953,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     }
 
     // Drawing of render items based on item status
-    function drawRenderItems() {
+    function drawFolderItems() {
         var item = {};
 
         for (var index = 0; index < canTopData.renderItems.length; index++) {
@@ -885,14 +992,20 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         createWindow(design, "Window Testtitle - Window 3", 100, 240);
 
         // Main loop
+        var queueItem = 0;
+
         function mainloop() {
             drawBackground();
 
-            drawRenderItems();
-
-            drawQueueItem(0);
-            drawQueueItem(1);
-            drawQueueItem(2);
+            drawFolderItems();
+            for (queueItem = 0; queueItem < canTopData.renderQueueSize; queueItem++) {
+                drawQueueItem(queueItem);
+                /*
+                 if (canTopData.renderQueue[queueItem].type === "window") {
+                 renderWindowContent(queueItem);
+                 }
+                 */
+            }
 
             if (useDebug) {
                 drawGrid();
