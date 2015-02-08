@@ -605,6 +605,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             mouse.previousY = evt.clientY;
             mouse.clickInterval = setInterval(recognizeDoubleClick, mouse.doubleClickSpeed);
         }
+
+        doClick();
     }
 
     // Timed function to check for double click
@@ -810,6 +812,9 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         }
 
         // Check folder clicks
+        if (mouse.clickInterval !== null) {
+            return;
+        }
         index = canTopData.renderItems.length;
         while (index--) {
             item = canTopData.renderItems[index];
