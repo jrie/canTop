@@ -465,16 +465,21 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
         for (item = 0; item < folderItems; item++) {
             dataIndex = item;
-            dummyItems.push([0, "Folder Item " + item, [[month, day, year, date], [hours, minutes, seconds, time], dataIndex]]);
+            dummyItems.push([0, "Folder Item " + item, [[parseInt(month), parseInt(day), year, date], [hours, minutes, seconds, time], dataIndex]]);
         }
+
+        lg(dummyItems[0]);
 
         // Create files
         var fileSize = 0;
         var fileItems = count - folderItems;
         for (item = 0; item < fileItems; item++) {
             fileSize = (Math.random() * 12500) + 1;
-            dummyItems.push([1, "File Item " + item, [[month, day, year, date], [hours, minutes, seconds, time], fileSize]]);
+            dummyItems.push([1, "File Item " + item, [[parseInt(month), parseInt(day), year, date], [hours, minutes, seconds, time], parseFloat(fileSize.toFixed(2))]]);
         }
+
+        lg(dummyItems[fileItems]);
+
 
         return dummyItems;
     }
