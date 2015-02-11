@@ -94,8 +94,8 @@ function getDesign(designName, width, heigth, gridX, gridY) {
             design.windowClose = ["dynamic", "both", [-12, 3], ["rect", "rect", "line", "line"], ["solid", "solid", "stroke", "stroke"], [["#dedede"], ["#aeaeae"], ["#333"], ["#333"]], [[0, 0, 10, 10], [2, 2, 6, 6], [2, 2, 8, 8], [2, 8, 8, 2]]];
 
             // Window contents
-            design.contentScrollbar = [["rect"], ["solid"], [["#aaa"]], [[0, 0, 12, 100]], -12, 0];
-            design.contentScrollbarPlugY = [["rect"], ["solid"], [["#dedede"]], [[0, 0, 6, 15]], 3, 0];
+            design.contentScrollbar = [["rect"], ["solid"], [["#555"]], [[0, 0, 12, 100]], -12, 0];
+            design.contentScrollbarPlugY = [["rect"], ["solid"], [["#ddd"]], [[0, 0, 6, 15]], 3, 3];
             break;
     }
 
@@ -264,11 +264,12 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         windowItem.oldWidth = windowItem.width;
         windowItem.oldHeight = windowItem.height;
 
-        // windowItem.contentArea = [posX, posY, sizeX, sizeY, scrollX, scrollY);
-        windowItem.contentArea = [0, windowItem.hotSpotOffsetY[0], windowItem.drawData[1][2][2], windowItem.drawData[1][2][3], 0, 0];
+        // windowItem.contentArea = [posX, posY, sizeX, sizeY, (spaceX, spaceY, scrollX, scrollY)];
+        // (items) <- become pushed later after the window has been calculated
+        windowItem.contentArea = [windowItem.x, windowItem.y + windowItem.hotSpotOffsetY[0], windowItem.width, windowItem.drawData[1][2][3]];
 
         // itemDesign, parent, positioningOn, fill-axis, action, datafield, datatype, initialValue, datastep
-        windowItem.contentItems = [["contentScrollbar", -1, "x", "fillY", false, false], ["contentScrollbarPlugY", 0, "x", "none", "scrollY", "percent", 0, 1, 0.1]];
+        windowItem.contentItems = [["contentScrollbar", -1, "x", "fillY", false, false], ["contentScrollbarPlugY", 0, "both", "none", "scrollY", "percent", 0, 1, 0.1]];
         windowItem.contentBoundaries = [];
         windowItem.contentHotSpots = [];
         windowItem.contentData = [];
@@ -281,11 +282,14 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         var itemWidth = 0;
         var itemHeight = 0;
 
+        // Those are used to offset and regulate items from filled controls
+        var offsetX = 0;
+        var offsetY = 0;
         var spaceX = windowItem.contentArea[2];
         var spaceY = windowItem.contentArea[3];
 
         var parent = -1;
-        for (index = 0; index < windowItem.contentItems.length; index++) {
+        for (var index = 0; index < windowItem.contentItems.length; index++) {
             contentItem = windowItem.contentItems[index];
             designItem = design[contentItem[0]];
 
@@ -298,7 +302,11 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                 itemHeight = spaceY;
 
                 if (parent === -1) {
-                    spaceX -= itemWidth;
+                    if (designItem[4] < 0) {
+                        spaceX -= itemWidth;
+                    } else {
+                        offsetX += itemWidth;
+                    }
                 }
 
             } else if (contentItem[3] === "fillX") {
@@ -306,7 +314,11 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                 itemHeight = designItem[6][1];
 
                 if (parent === -1) {
-                    spaceY -= itemHeight;
+                    if (designItem[5] < 0) {
+                        spaceY -= itemHeight;
+                    } else {
+                        offsetY += itemHeight;
+                    }
                 }
             } else {
                 itemWidth = designItem[6][2];
@@ -316,11 +328,19 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             // Prepare the item X and Y coordinate
             if (parent === -1) {
                 if (contentItem[2] === "x") {
-                    itemX = windowItem.contentArea[2] + designItem[4];
-                    itemY = spaceY;
+                    if (designItem[4] < 0) {
+                        itemX = windowItem.contentArea[2] + designItem[4];
+                    } else {
+                        itemX = designItem[4];
+                    }
+                    itemY = 0;
                 } else if (contentItem[2] === "y") {
-                    itemX = spaceX;
-                    itemY = windowItem.contentArea[3] + designItem[5];
+                    itemX = 0;
+                    if (designItem[5] < 0) {
+                        itemY = windowItem.contentArea[3] + designItem[5];
+                    } else {
+                        itemY = designItem[5];
+                    }
                 } else if (contentItem[2] === "both") {
                     itemX = windowItem.contentArea[2] + designItem[4];
                     itemY = windowItem.contentArea[3] + designItem[5];
@@ -328,18 +348,18 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             } else {
                 if (contentItem[2] === "x") {
                     itemX = windowItem.contentBoundaries[parent][0] + designItem[4];
-                    itemY = 0;
+                    itemY = windowItem.contentBoundaries[parent][1];
                 } else if (contentItem[2] === "y") {
-                    itemX = 0;
+                    itemX = windowItem.contentBoundaries[parent][0];
                     itemY = windowItem.contentBoundaries[parent][1] + designItem[5];
                 } else if (contentItem[2] === "both") {
-                    itemX = windowItem.contentBoundaries[parent][0] + designItem[5];
+                    itemX = windowItem.contentBoundaries[parent][0] + designItem[4];
                     itemY = windowItem.contentBoundaries[parent][1] + designItem[5];
                 }
             }
 
             // Add the item dimensions and spacing onto the content drawing list for rendering
-            windowItem.contentBoundaries.push([itemX, itemY, itemWidth, itemHeight]);
+            windowItem.contentBoundaries.push([itemX, itemY, itemWidth, itemHeight, itemX + itemWidth, itemY + itemHeight]);
 
             // Check if this item has a action combined to it and push the index and action on the actionData stack
             if (contentItem[4] !== false) {
@@ -353,11 +373,13 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
                 windowItem.contentHotSpots.push(index);
             }
-
         }
+        // Push the available visible space onto the contentArea array
+        windowItem.contentArea.push([offsetX, offsetY, spaceX, spaceY]);
+        windowItem.contentArea.push([0, 0]);
         lg("--------------------------------------------------");
         lg(windowItem.contentItems);
-        lg(windowItem.contentArea)
+        lg(windowItem.contentArea);
         lg(windowItem.contentBoundaries);
         lg(windowItem.contentHotSpots);
         lg(windowItem.contentData);
@@ -454,9 +476,9 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         var date = [month, day, year].join("\/");
 
         // Create the timestamp
-        var hours = dateObject.getHours();
-        var minutes = dateObject.getMinutes();
-        var seconds = dateObject.getSeconds();
+        var hours = dateObject.getHours() < 10 ? "0" + dateObject.getHours() : dateObject.getHours();
+        var minutes = dateObject.getMinutes() < 10 ? "0" + dateObject.getMinutes() : dateObject.getMinutes();
+        var seconds = dateObject.getSeconds() < 10 ? "0" + dateObject.getSeconds() : dateObject.getSeconds();
         var time = [hours, minutes, seconds].join(":");
 
         // Create folders
@@ -466,22 +488,17 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
         for (item = 0; item < folderItems; item++) {
             dataIndex = item;
-            dummyItems.push([0, "Folder Item " + item, [[parseInt(month), parseInt(day), year, date], [hours, minutes, seconds, time], dataIndex]]);
+            dummyItems.push([0, "Folder Item " + item, [[parseInt(month), parseInt(day), year, date], [parseInt(hours), parseInt(minutes), parseInt(seconds), time], dataIndex]]);
         }
 
-
-        lg(dummyItems[0]);
 
         // Create files
         var fileSize = 0;
         var fileItems = count - folderItems;
         for (item = 0; item < fileItems; item++) {
             fileSize = (Math.random() * 12500) + 1;
-            dummyItems.push([1, "File Item " + item, [[parseInt(month), parseInt(day), year, date], [hours, minutes, seconds, time], parseFloat(fileSize.toFixed(2))]]);
+            dummyItems.push([1, "File Item " + item, [[parseInt(month), parseInt(day), year, date], [hours, minutes, seconds, time], parseFloat((fileSize / 1024).toFixed(2))]]);
         }
-
-        lg(dummyItems[folderItems]);
-
 
         return dummyItems;
     }
@@ -826,6 +843,26 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                             newHeight = activeItem.oldHeight;
                         }
                         resizeWindowItem(activeItem, newWidth, newHeight);
+                        sizeWindowContent(activeItem, newWidth, newHeight);
+                    }
+                    var lastItem = false;
+                    if (pressedItem === "windowContent") {
+                        var contentBoundaries = activeItem.contentBoundaries;
+                        var boundary = [];
+                        var mX = mouse.x - (activeItem.contentArea[0] + canvas.offsetLeft);
+                        var mY = mouse.y - (activeItem.contentArea[1] + activeItem.hotSpotOffsetY[0]);
+                        for (var item = 0; item < contentBoundaries.length; item++) {
+                            boundary = contentBoundaries[item];
+
+                            if (mX >= boundary[0] && mX <= boundary[4] && mY >= boundary[1] && mY <= boundary[5]) {
+                                lastItem = activeItem.contentItems[item];
+
+                            }
+                            if (!lastItem) {
+                                return;
+                            }
+                            lg("Pressed item: " + activeItem.title + " / " + lastItem[0]);
+                        }
                     }
                 }
 
@@ -928,6 +965,10 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                     mouse.activeItem.y = canvas.height - mouse.activeItem.height;
                 }
             }
+// Update the dimensions of the contentArea for content drawing
+            mouse.activeItem.contentArea[0] = mouse.activeItem.x;
+            mouse.activeItem.contentArea[1] = mouse.activeItem.y + mouse.activeItem.hotSpotOffsetY[0];
+
         }
     }
 
@@ -1016,6 +1057,105 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                 }
             }
         }
+
+        // Update the dimensions of the contentArea for content drawing
+        // and size the window content area content according to rules
+        //activeItem.contentArea = [activeItem.x, activeItem.y + activeItem.hotSpotOffsetY[0], newWidth, activeItem.drawData[1][2][3] - activeItem.hotSpotOffsetY[0], activeItem.contentArea[4], activeItem.contentArea[5]];
+        sizeWindowContent(activeItem, newWidth, newHeight);
+    }
+
+    // Size window content area content according to ruleset
+    function sizeWindowContent(windowItem, width, height) {
+        // General variables
+        var contentItem = [];
+        var designItem = [];
+        var itemX = 0;
+        var itemY = 0;
+        var itemWidth = 0;
+        var itemHeight = 0;
+
+        // Those are used to offset and regulate items from filled controls
+        var offsetX = 0;
+        var offsetY = 0;
+        var spaceX = windowItem.contentArea[2];
+        var spaceY = windowItem.contentArea[3];
+        var parent = -1;
+
+        for (var index = 0; index < windowItem.contentItems.length; index++) {
+            contentItem = windowItem.contentItems[index];
+            designItem = design[contentItem[0]];
+
+            parent = contentItem[1];
+
+            // Define the height of the element based on the fillstyle
+            // In case there is no parent set, deduct the available space of the content area
+            if (contentItem[3] === "fillY") {
+                itemWidth = designItem[6][2];
+                itemHeight = spaceY;
+
+                if (parent === -1) {
+                    if (designItem[4] < 0) {
+                        spaceX -= itemWidth;
+                    } else {
+                        offsetX += itemWidth;
+                    }
+                }
+
+            } else if (contentItem[3] === "fillX") {
+                itemWidth = spaceX;
+                itemHeight = designItem[6][1];
+
+                if (parent === -1) {
+                    if (designItem[5] < 0) {
+                        spaceY -= itemHeight;
+                    } else {
+                        offsetY += itemHeight;
+                    }
+                }
+            } else {
+                itemWidth = designItem[6][2];
+                itemHeight = designItem[6][3];
+            }
+
+            // Prepare the item X and Y coordinate
+            if (parent === -1) {
+                if (contentItem[2] === "x") {
+                    if (designItem[4] < 0) {
+                        itemX = windowItem.contentArea[2] + designItem[4];
+                    } else {
+                        itemX = designItem[4];
+                    }
+                    itemY = 0;
+                } else if (contentItem[2] === "y") {
+                    itemX = 0;
+                    if (designItem[5] < 0) {
+                        itemY = windowItem.contentArea[3] + designItem[5];
+                    } else {
+                        itemY = designItem[5];
+                    }
+                } else if (contentItem[2] === "both") {
+                    itemX = windowItem.contentArea[2] + designItem[4];
+                    itemY = windowItem.contentArea[3] + designItem[5];
+                }
+            } else {
+                if (contentItem[2] === "x") {
+                    itemX = windowItem.contentBoundaries[parent][0] + designItem[4];
+                    itemY = windowItem.contentBoundaries[parent][1];
+                } else if (contentItem[2] === "y") {
+                    itemX = windowItem.contentBoundaries[parent][0];
+                    itemY = windowItem.contentBoundaries[parent][1] + designItem[5];
+                } else if (contentItem[2] === "both") {
+                    itemX = windowItem.contentBoundaries[parent][0] + designItem[4];
+                    itemY = windowItem.contentBoundaries[parent][1] + designItem[5];
+                }
+            }
+
+            // Save the new dimensions for rendering
+            windowItem.contentBoundaries[index] = [itemX, itemY, itemWidth, itemHeight, itemX + itemWidth, itemY + itemHeight];
+        }
+
+        windowItem.contentArea = [windowItem.x, windowItem.y + windowItem.hotSpotOffsetY[0], width, windowItem.drawData[1][2][3] - windowItem.hotSpotOffsetY[0], [offsetX, offsetY, spaceX, spaceY], windowItem.contentArea[5]];
+
     }
 
     // Render item creation functions
@@ -1074,22 +1214,103 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
          lg(windowItem.contentActions);
          lg(windowItem.items);
          */
-        var items = windowItem.contentItems;
+        var contentItems = windowItem.contentItems;
         var contentArea = windowItem.contentArea;
         var boundaries = windowItem.contentBoundaries;
-        var hotSpots = windowItem.contentHotSpots;
-        var data = windowItem.contentData;
-        var actions = windowItem.contentActions;
-        var windowItems = windowItem.items;
+        var items = windowItem.items;
+
+        // windowItem.contentArea = [posX, posY, sizeX, sizeY, (spaceX, spaceY, scrollX, scrollY)];
+        var index = 0;
+        var contentItem = [];
+        var designItem = [];
+        var itemBoundaries = [];
+        var subIndex = 0;
+
+        var fillMethod = "";
+        var drawType = [];
+        var drawingMethod = "";
+        var colors = [];
+        var posX = 0;
+        var posY = 0;
+        var parent = -1;
+
+        for (index = 0; index < boundaries.length; index++) {
+            contentItem = contentItems[index];
+            designItem = design[contentItem[0]];
+            itemBoundaries = boundaries[index];
+
+            for (subIndex = 0; subIndex < designItem[0].length; subIndex++) {
+                drawingMethod = designItem[0][subIndex];
+                fillMethod = designItem[1][subIndex];
+                colors = designItem[2][subIndex];
+
+                posX = contentArea[0] + itemBoundaries[0];
+                posY = itemBoundaries[1];
+
+                drawType = fillMethod.split("_", 2);
+                if (drawType[0] === "solid") {
+                    dc.fillStyle = colors[0];
+                } else if (drawType[0] === "gradient") {
+                    dc.fillStyle = createGradient(drawType[1], contentArea[0] + posX, contentArea[1] + posY, itemBoundaries[2], itemBoundaries[3]);
+                }
+
+                if (drawingMethod === "rect") {
+                    dc.lineWidth = 1;
+                    dc.strokeRect(posX, contentArea[1] + posY, itemBoundaries[2], itemBoundaries[3]);
+                    dc.fillRect(posX, contentArea[1] + posY, itemBoundaries[2], itemBoundaries[3]);
+                }
+            }
+        }
+
+
+        var currentItem = [];
+        var offsetX = contentArea[0] + 3;
+        var offsetY = contentArea[1] + 12;
+
+        // Clip the drawable area by the dimensions of the content area
+        if (contentArea.length < 5) {
+            return;
+        }
+        dc.save();
+        dc.beginPath();
+        dc.rect(contentArea[0], contentArea[1], contentArea[2], contentArea[3]);
+        dc.clip();
+
+        for (var item = 0; item < items.length; item++) {
+            currentItem = items[item];
+
+
+            dc.textAlign = "left";
+            if (offsetY > (contentArea[1] + contentArea[5][1] - 18)) {
+                if (currentItem[0] === 0) {
+                    dc.fillStyle = "#aaaa00";
+                    dc.fillText(currentItem[1], offsetX, offsetY);
+                } else if (currentItem[0] === 1) {
+                    dc.fillStyle = "#aaa";
+                    dc.fillText(currentItem[1], offsetX, offsetY);
+                    dc.fillText(currentItem[2][0][3], offsetX + 100, offsetY);
+                    dc.fillText(currentItem[2][1][3], offsetX + 170, offsetY);
+                    dc.fillText(currentItem[2][2] + " MB", offsetX + 240, offsetY);
+                }
+
+            }
+
+            if (offsetY > (contentArea[1] + contentArea[3])) {
+                break;
+            }
+
+            offsetY += 18;
+        }
+        dc.restore();
     }
 
     // Main function executes after desktop imagemap has been loaded
     function initialized() {
         createFolderItem("Documents", 20, 10);
         createFolderItem("Briefcase", 20, 80);
-        createWindow(design, "Window Testtitle - Window 1", 100, 100);
+        createWindow(design, "Window Testtitle - Window 1", 70, 100);
         createWindow(design, "Window Testtitle - Window 2", 420, 100);
-        createWindow(design, "Window Testtitle - Window 3", 100, 240);
+        createWindow(design, "Window Testtitle - Window 3", 150, 240);
 
         // Main loop
         var queueItem = 0;
