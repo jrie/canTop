@@ -845,25 +845,6 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         resizeWindowItem(activeItem, newWidth, newHeight);
                         sizeWindowContent(activeItem, newWidth, newHeight);
                     }
-                    var lastItem = false;
-                    if (pressedItem === "windowContent") {
-                        var contentBoundaries = activeItem.contentBoundaries;
-                        var boundary = [];
-                        var mX = mouse.x - (activeItem.contentArea[0] + canvas.offsetLeft);
-                        var mY = mouse.y - (activeItem.contentArea[1] + activeItem.hotSpotOffsetY[0]);
-                        for (var item = 0; item < contentBoundaries.length; item++) {
-                            boundary = contentBoundaries[item];
-
-                            if (mX >= boundary[0] && mX <= boundary[4] && mY >= boundary[1] && mY <= boundary[5]) {
-                                lastItem = activeItem.contentItems[item];
-
-                            }
-                            if (!lastItem) {
-                                return;
-                            }
-                            lg("Pressed item: " + activeItem.title + " / " + lastItem[0]);
-                        }
-                    }
                 }
 
                 if (mouse.realiseMovement) {
@@ -875,6 +856,50 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                             mouse.activeItem = activeItem;
                         }
                         return;
+                    } else if (pressedItem === "windowContent") {
+                        var lastItem = false;
+                        var contentBoundaries = activeItem.contentBoundaries;
+                        var boundary = [];
+                        var mX = mouse.x - (activeItem.contentArea[0] + canvas.offsetLeft);
+                        var mY = mouse.y - (activeItem.contentArea[1] + activeItem.hotSpotOffsetY[0]);
+                        var item = 0;
+                        for (item = 0; item < contentBoundaries.length; item++) {
+                            boundary = contentBoundaries[item];
+                            lg(boundary);
+                            if (mX >= boundary[0] && mX <= boundary[4] && mY >= boundary[1] && mY <= (boundary[1] + boundary[5])) {
+                                lastItem = activeItem.contentItems[item];
+                            }
+                            if (!lastItem) {
+                                return;
+                            }
+
+                            var mouseItem = {};
+                            mouseItem.type = lastItem[0];
+                            mouseItem.itemIndex = item;
+                            mouseItem.pointer = 0;
+                            mouseItem.parentWindow = activeItem.zOrder;
+
+                            for (var index = 0; index < activeItem.contentData.length; index++) {
+                                if (activeItem.contentData[index][0] === item) {
+                                    mouseItem.data = activeItem.contentData[index];
+                                    mouseItem.action = activeItem.contentActions[index][1];
+                                    mouseItem.pointer = index;
+                                    break;
+                                }
+                            }
+
+                            switch (lastItem[0]) {
+                                case "contentScrollbarPlugY":
+                                case "contentScrollbarPlugX":
+                                    mouse.previousX = mouse.x;
+                                    mouse.previousY = mouse.y;
+                                    mouse.moveInterval = setInterval(realiseMouseMovement, mouse.movementSpeed);
+                                    mouse.activeItem = mouseItem;
+                                    break;
+                            }
+
+                            lg("Pressed item: " + activeItem.title + " / " + lastItem[0]);
+                        }
                     }
 
                     if (pressedItem === "windowResize") {
@@ -947,28 +972,68 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         }
 
         if (mouse.activeItem !== null) {
-            mouse.activeItem.x -= mouse.previousX - mouse.x;
-            mouse.activeItem.y -= mouse.previousY - mouse.y;
+            switch (mouse.activeItem.type) {
+                case "window":
+                    mouse.activeItem.x -= mouse.previousX - mouse.x;
+                    mouse.activeItem.y -= mouse.previousY - mouse.y;
+
+                    if (snapToEdges) {
+                        if (mouse.activeItem.x <= 0) {
+                            mouse.activeItem.x = 0;
+                        } else if (mouse.activeItem.x + mouse.activeItem.width >= canvas.width) {
+                            mouse.activeItem.x = canvas.width - mouse.activeItem.width;
+                        }
+
+                        if (mouse.activeItem.y <= 0) {
+                            mouse.activeItem.y = 0;
+                        } else if (mouse.activeItem.y + mouse.activeItem.height >= canvas.height) {
+                            mouse.activeItem.y = canvas.height - mouse.activeItem.height;
+                        }
+                    }
+
+                    // Update the dimensions of the contentArea for content drawing
+                    mouse.activeItem.contentArea[0] = mouse.activeItem.x;
+                    mouse.activeItem.contentArea[1] = mouse.activeItem.y + mouse.activeItem.hotSpotOffsetY[0];
+                    break;
+                case "contentScrollbarPlugY":
+                case "contentScrollbarPlugX":
+                    var parentWindow = canTopData.renderQueue[mouse.activeItem.parentWindow];
+
+                    if (mouse.activeItem.action === "scrollY") {
+                        var itemBaseY = design[mouse.activeItem.type][5];
+                        var itemHeight = parentWindow.contentBoundaries[mouse.activeItem.itemIndex][3];
+                        var scrollHeight = parentWindow.contentArea[3] - (itemBaseY + itemHeight);
+                        var mouseOffsetY = mouse.previousY - mouse.y;
+
+                        parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] -= mouseOffsetY;
+
+                        if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] < itemBaseY) {
+                            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = itemBaseY;
+                        }
+
+                        if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] > scrollHeight) {
+                            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = scrollHeight;
+                        }
+
+                        var scrollPercentage = (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1]) / scrollHeight;
+                        if (scrollPercentage > 0.99) {
+                            scrollPercentage = 1;
+                        } else if (scrollPercentage < 0.031) {
+                            scrollPercentage = 0;
+                        }
+
+                        // Maximum positive scroll in Y
+                        if (parentWindow.contentArea[5][1] <= ((parentWindow.items.length * 18) - parentWindow.contentArea[3])) {
+                            parentWindow.contentArea[5][1] = (((parentWindow.items.length * 18) - parentWindow.contentArea[3]) * scrollPercentage);
+                        } else {
+                            parentWindow.contentArea[5][1] = (parentWindow.items.length * 18) - parentWindow.contentArea[3];
+                        }
+                    }
+                    break;
+            }
+
             mouse.previousX = mouse.x;
             mouse.previousY = mouse.y;
-
-            if (snapToEdges) {
-                if (mouse.activeItem.x <= 0) {
-                    mouse.activeItem.x = 0;
-                } else if (mouse.activeItem.x + mouse.activeItem.width >= canvas.width) {
-                    mouse.activeItem.x = canvas.width - mouse.activeItem.width;
-                }
-
-                if (mouse.activeItem.y <= 0) {
-                    mouse.activeItem.y = 0;
-                } else if (mouse.activeItem.y + mouse.activeItem.height >= canvas.height) {
-                    mouse.activeItem.y = canvas.height - mouse.activeItem.height;
-                }
-            }
-// Update the dimensions of the contentArea for content drawing
-            mouse.activeItem.contentArea[0] = mouse.activeItem.x;
-            mouse.activeItem.contentArea[1] = mouse.activeItem.y + mouse.activeItem.hotSpotOffsetY[0];
-
         }
     }
 
@@ -1154,7 +1219,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             windowItem.contentBoundaries[index] = [itemX, itemY, itemWidth, itemHeight, itemX + itemWidth, itemY + itemHeight];
         }
 
-        windowItem.contentArea = [windowItem.x, windowItem.y + windowItem.hotSpotOffsetY[0], width, windowItem.drawData[1][2][3] - windowItem.hotSpotOffsetY[0], [offsetX, offsetY, spaceX, spaceY], windowItem.contentArea[5]];
+        windowItem.contentArea = [windowItem.x, windowItem.y + windowItem.hotSpotOffsetY[0], width, windowItem.drawData[1][2][3] - windowItem.hotSpotOffsetY[0], [offsetX, offsetY, spaceX, spaceY], [0, 0]];
 
     }
 
@@ -1262,45 +1327,40 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             }
         }
 
-
         var currentItem = [];
         var offsetX = contentArea[0] + 3;
         var offsetY = contentArea[1] + 12;
 
         // Clip the drawable area by the dimensions of the content area
-        if (contentArea.length < 5) {
-            return;
-        }
         dc.save();
         dc.beginPath();
-        dc.rect(contentArea[0], contentArea[1], contentArea[2], contentArea[3]);
+        dc.rect(contentArea[0], contentArea[1], contentArea[4][2], contentArea[3]);
         dc.clip();
 
         for (var item = 0; item < items.length; item++) {
             currentItem = items[item];
 
-
             dc.textAlign = "left";
-            if (offsetY > (contentArea[1] + contentArea[5][1] - 18)) {
+            if (offsetY >= (contentArea[1] + contentArea[5][1] - 18)) {
                 if (currentItem[0] === 0) {
                     dc.fillStyle = "#aaaa00";
-                    dc.fillText(currentItem[1], offsetX, offsetY);
+                    dc.fillText(currentItem[1], offsetX, offsetY - contentArea[5][1]);
                 } else if (currentItem[0] === 1) {
                     dc.fillStyle = "#aaa";
-                    dc.fillText(currentItem[1], offsetX, offsetY);
-                    dc.fillText(currentItem[2][0][3], offsetX + 100, offsetY);
-                    dc.fillText(currentItem[2][1][3], offsetX + 170, offsetY);
-                    dc.fillText(currentItem[2][2] + " MB", offsetX + 240, offsetY);
+                    dc.fillText(currentItem[1], offsetX, offsetY - contentArea[5][1]);
+                    dc.fillText([currentItem[2][0][3], currentItem[2][1][3]].join("    "), offsetX + 100, offsetY - contentArea[5][1]);
+                    dc.fillText(currentItem[2][2] + " MB", offsetX + 240, offsetY - contentArea[5][1]);
                 }
-
             }
+            offsetY += 18;
 
-            if (offsetY > (contentArea[1] + contentArea[3])) {
+            if ((offsetY - contentArea[5][1]) > (contentArea[1] + contentArea[3])) {
                 break;
             }
 
-            offsetY += 18;
+
         }
+
         dc.restore();
     }
 
