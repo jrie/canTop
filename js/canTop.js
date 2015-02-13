@@ -233,7 +233,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         windowItem.drawingItems = ["windowTitleBar", "windowContent", "windowStatusBar", "windowResize", "windowClose", "windowMaximize", "windowMinimize"];
         windowItem.hotSpots = ["windowTitleBar", "windowContent", "windowStatusBar", "windowResize", "windowClose", "windowMaximize", "windowMinimize"];
 
-        windowItem.items = generateDummyData(100);
+        windowItem.items = generateDummyData(parseInt(Math.random() * 50) + 25);
         windowItem.style = "list";
         windowItem.type = "window";
         windowItem.hotSpotOffsetY = [];
@@ -377,6 +377,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         // Push the available visible space onto the contentArea array
         windowItem.contentArea.push([offsetX, offsetY, spaceX, spaceY]);
         windowItem.contentArea.push([0, 0]);
+
+        windowItem.contentHeight = (windowItem.items * 18);
         lg("--------------------------------------------------");
         lg(windowItem.contentItems);
         lg(windowItem.contentArea);
@@ -384,6 +386,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         lg(windowItem.contentHotSpots);
         lg(windowItem.contentData);
         lg(windowItem.contentActions);
+        lg(windowItem.contentHeight)
 
         canTopData.renderQueue.push(windowItem);
         canTopData.renderQueueSize++;
@@ -865,7 +868,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         var item = 0;
                         for (item = 0; item < contentBoundaries.length; item++) {
                             boundary = contentBoundaries[item];
-                            lg(boundary);
+
                             if (mX >= boundary[0] && mX <= boundary[4] && mY >= boundary[1] && mY <= (boundary[1] + boundary[5])) {
                                 lastItem = activeItem.contentItems[item];
                             }
@@ -895,6 +898,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                                     mouse.previousY = mouse.y;
                                     mouse.moveInterval = setInterval(realiseMouseMovement, mouse.movementSpeed);
                                     mouse.activeItem = mouseItem;
+                                    mouse.clickCount = -1;
                                     break;
                             }
 
@@ -1017,10 +1021,13 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         }
 
                         // Maximum positive scroll in Y
-                        if (parentWindow.contentArea[5][1] <= ((parentWindow.items.length * 18) - parentWindow.contentArea[3])) {
-                            parentWindow.contentArea[5][1] = (((parentWindow.items.length * 18) - parentWindow.contentArea[3]) * scrollPercentage);
+                        var contentHeight = parentWindow.contentHeight;
+                        if (parentWindow.contentArea[5][1] <= (contentHeight - parentWindow.contentArea[3])) {
+                            parentWindow.contentArea[5][1] = ((contentHeight - parentWindow.contentArea[3]) * scrollPercentage);
+                        } else if (parentWindow.contentArea[3] < contentHeight) {
+                            parentWindow.contentArea[5][1] = contentHeight - parentWindow.contentArea[3];
                         } else {
-                            parentWindow.contentArea[5][1] = (parentWindow.items.length * 18) - parentWindow.contentArea[3];
+                            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = itemBaseY;
                         }
                     }
                     break;
@@ -1263,22 +1270,11 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
     function renderWindowContent(queueItem) {
         var windowItem = canTopData.renderQueue[queueItem];
-        /*
-         lg(windowItem.contentItems);
-         lg(windowItem.contentArea)
-         lg(windowItem.contentBoundaries);
-         lg(windowItem.contentHotSpots);
-         //windowItem.contentData.push([index, contentItem[6], contentItem[7], contentItem[8]]);
-         lg(windowItem.contentData);
-         lg(windowItem.contentActions);
-         lg(windowItem.items);
-         */
         var contentItems = windowItem.contentItems;
         var contentArea = windowItem.contentArea;
         var boundaries = windowItem.contentBoundaries;
         var items = windowItem.items;
 
-        // windowItem.contentArea = [posX, posY, sizeX, sizeY, (spaceX, spaceY, scrollX, scrollY)];
         var index = 0;
         var contentItem = [];
         var designItem = [];
@@ -1291,7 +1287,6 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         var colors = [];
         var posX = 0;
         var posY = 0;
-        var parent = -1;
 
         for (index = 0; index < boundaries.length; index++) {
             contentItem = contentItems[index];
@@ -1331,6 +1326,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         dc.rect(contentArea[0], contentArea[1], contentArea[4][2], contentArea[3]);
         dc.clip();
 
+        var contentHeight = (items.length * 18);
+
         for (var item = 0; item < items.length; item++) {
             currentItem = items[item];
 
@@ -1351,11 +1348,10 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             if ((offsetY - contentArea[5][1]) > (contentArea[1] + contentArea[3])) {
                 break;
             }
-
-
         }
 
         dc.restore();
+        windowItem.contentHeight = contentHeight;
     }
 
     // Main function executes after desktop imagemap has been loaded
