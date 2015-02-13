@@ -1003,23 +1003,17 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         var itemBaseY = design[mouse.activeItem.type][5];
                         var itemHeight = parentWindow.contentBoundaries[mouse.activeItem.itemIndex][3];
                         var scrollHeight = parentWindow.contentArea[3] - (itemBaseY + itemHeight);
-                        var mouseOffsetY = mouse.previousY - mouse.y;
 
-                        parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] -= mouseOffsetY;
-
-                        if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] < itemBaseY) {
+                        parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] -= (mouse.previousY - mouse.y);
+                        var scrollPercentage = 0;
+                        if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] <= itemBaseY) {
                             parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = itemBaseY;
-                        }
-
-                        if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] > scrollHeight) {
-                            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = scrollHeight;
-                        }
-
-                        var scrollPercentage = (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1]) / scrollHeight;
-                        if (scrollPercentage > 0.99) {
-                            scrollPercentage = 1;
-                        } else if (scrollPercentage < 0.031) {
                             scrollPercentage = 0;
+                        } else if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] >= scrollHeight) {
+                            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = scrollHeight;
+                            scrollPercentage = 1;
+                        } else {
+                            scrollPercentage = (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] - itemBaseY) / scrollHeight;
                         }
 
                         // Maximum positive scroll in Y
