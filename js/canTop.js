@@ -224,7 +224,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     }
 
 
-    function createWindow(design, title, x, y) {
+    function createWindow(design, type, title, x, y) {
         var windowItem = {};
         windowItem.title = title;
         windowItem.x = x;
@@ -232,8 +232,11 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         windowItem.zOrder = canTopData.renderQueueSize;
         windowItem.drawingItems = ["windowTitleBar", "windowContent", "windowStatusBar", "windowResize", "windowClose", "windowMaximize", "windowMinimize"];
         windowItem.hotSpots = ["windowTitleBar", "windowContent", "windowStatusBar", "windowResize", "windowClose", "windowMaximize", "windowMinimize"];
-
-        windowItem.items = generateDummyData(parseInt(Math.random() * 50) + 25);
+        if (type === "data") {
+            windowItem.items = generateDummyData(parseInt(Math.random() * 50) + 25);
+        } else {
+            windowItem.items = [];
+        }
         windowItem.style = "list";
         windowItem.type = "window";
         windowItem.hotSpotOffsetY = [];
@@ -242,6 +245,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         windowItem.isMaximized = false;
         windowItem.oldX = x;
         windowItem.oldY = y;
+        windowItem.mode = type;
 
         var offsetY = 0;
         var dimensions = [];
@@ -1320,47 +1324,50 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         var offsetX = contentArea[0] + 3;
         var offsetY = contentArea[1] + 12;
 
-        // Clip the drawable area by the dimensions of the content area
-        dc.save();
-        dc.beginPath();
-        dc.rect(contentArea[0], contentArea[1], contentArea[4][2], contentArea[3]);
-        dc.clip();
+        if (windowItem.mode === "data") {
+            // Clip the drawable area by the dimensions of the content area
+            dc.save();
+            dc.beginPath();
+            dc.rect(contentArea[0], contentArea[1], contentArea[4][2], contentArea[3]);
+            dc.clip();
 
-        var contentHeight = (items.length * 18);
+            var contentHeight = (items.length * 18);
 
-        for (var item = 0; item < items.length; item++) {
-            currentItem = items[item];
+            for (var item = 0; item < items.length; item++) {
+                currentItem = items[item];
 
-            dc.textAlign = "left";
-            if (offsetY >= (contentArea[1] + contentArea[5][1] - 18)) {
-                if (currentItem[0] === 0) {
-                    dc.fillStyle = "#aaaa00";
-                    dc.fillText(currentItem[1], offsetX, offsetY - contentArea[5][1]);
-                } else if (currentItem[0] === 1) {
-                    dc.fillStyle = "#aaa";
-                    dc.fillText(currentItem[1], offsetX, offsetY - contentArea[5][1]);
-                    dc.fillText([currentItem[2][0][3], currentItem[2][1][3]].join("    "), offsetX + 100, offsetY - contentArea[5][1]);
-                    dc.fillText(currentItem[2][2] + " MB", offsetX + 240, offsetY - contentArea[5][1]);
+                dc.textAlign = "left";
+                if (offsetY >= (contentArea[1] + contentArea[5][1] - 18)) {
+                    if (currentItem[0] === 0) {
+                        dc.fillStyle = "#aaaa00";
+                        dc.fillText(currentItem[1], offsetX, offsetY - contentArea[5][1]);
+                    } else if (currentItem[0] === 1) {
+                        dc.fillStyle = "#aaa";
+                        dc.fillText(currentItem[1], offsetX, offsetY - contentArea[5][1]);
+                        dc.fillText([currentItem[2][0][3], currentItem[2][1][3]].join("    "), offsetX + 100, offsetY - contentArea[5][1]);
+                        dc.fillText(currentItem[2][2] + " MB", offsetX + 240, offsetY - contentArea[5][1]);
+                    }
+                }
+                offsetY += 18;
+
+                if ((offsetY - contentArea[5][1]) > (contentArea[1] + contentArea[3])) {
+                    break;
                 }
             }
-            offsetY += 18;
 
-            if ((offsetY - contentArea[5][1]) > (contentArea[1] + contentArea[3])) {
-                break;
-            }
+            dc.restore();
+            windowItem.contentHeight = contentHeight;
         }
 
-        dc.restore();
-        windowItem.contentHeight = contentHeight;
     }
 
     // Main function executes after desktop imagemap has been loaded
     function initialized() {
         createFolderItem("Documents", 20, 10);
         createFolderItem("Briefcase", 20, 80);
-        createWindow(design, "Window Testtitle - Window 1", 70, 100);
-        createWindow(design, "Window Testtitle - Window 2", 420, 100);
-        createWindow(design, "Window Testtitle - Window 3", 150, 240);
+        createWindow(design, "data", "Window Testtitle - Window 1", 70, 100);
+        createWindow(design, "data", "Window Testtitle - Window 2", 420, 100);
+        createWindow(design, "data", "Window Testtitle - Window 3", 150, 240);
 
         // Main loop
         var queueItem = 0;
