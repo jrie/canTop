@@ -102,8 +102,8 @@ function getDesign(designName, width, heigth, gridX, gridY) {
 
             // Interactive elements
             design.textCursor = ["#888", 2];
-            design.contentInputField = [["rect"], ["solid"], [["#999"]], [[0, 0, 100, 20]], 0, 0];
-            design.contentInputFieldText = ["#000", "transparent"], ["#009900", "#00003a"];
+            design.contentInputField = [["rect", "rect"], ["solid", "solid"], [["#999"], ["#333"]], [[0, 0, 100, 20], [1, 1, 97, 17]], 0, 0];
+            design.contentInputFieldText = [["#fff", "transparent"], ["#009900", "#00003a"]];
             break;
     }
 
@@ -299,6 +299,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         windowItem.contentBoundaries = [];
         windowItem.contentData = [];
         windowItem.contentActions = [];
+        windowItem.contentHeight = (windowItem.items.length * 18);
 
         var contentItem = [];
         var designItem = [];
@@ -412,9 +413,6 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     canvas.width = width;
     canvas.height = height;
 
-    // Get the default design values for quicker access
-    var ctFolderIcon = design.folderIcon;
-
     // Other values we work with
     var mouse = {};
     mouse.x = 0;
@@ -435,6 +433,10 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     mouse.movementSpeed = 100 / 60;
 
     mouse.activeItem = null;
+    mouse.cursorItem = null;
+    mouse.cursorAt = [];
+    mouse.cursorBlinkRate = 36;
+    mouse.cursorBlink = 0;
 
     // Variables for grid drawing
     var gridPoint = [];
@@ -583,6 +585,18 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         return [posX, posY];
     }
 
+    // Get window by id
+    function getWindowById(id) {
+        var item = canTopData.renderQueueSize;
+        while (item--) {
+            if (canTopData.renderQueue[item].type === "window") {
+                if (canTopData.renderQueue[item].id === id) {
+                    return canTopData.renderQueue[item];
+                }
+            }
+        }
+    }
+
     // Calculate mouse px to grid
     function getMouseGridPoint() {
         return [Math.floor((mouse.x - mouse.offsetX) / gridX), Math.floor((mouse.y - mouse.offsetY) / gridY)];
@@ -617,13 +631,17 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         item.type = lastItem[0];
         item.itemIndex = itemIndex;
         item.pointer = 0;
-        item.parentWindow = activeItem.zOrder;
+        item.parentWindow = activeItem.id;
 
         for (var index = 0; index < activeItem.contentData.length; index++) {
             if (activeItem.contentData[index][0] === itemIndex) {
                 item.data = activeItem.contentData[index];
                 item.action = activeItem.contentActions[index][1];
                 item.pointer = index;
+                item.x = activeItem.contentArea[0] + activeItem.contentBoundaries[itemIndex][0];
+                item.y = activeItem.contentArea[1] + activeItem.contentBoundaries[itemIndex][1];
+                item.width = activeItem.contentBoundaries[itemIndex][2];
+                item.height = activeItem.contentBoundaries[itemIndex][3];
                 break;
             }
         }
@@ -787,6 +805,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         // Move the window on top of the stack and mark it active
         // degerade order index on stack by 1
         if (zOrderIndex !== -1) {
+            // Reorder the window layering on window activation
             canTopData.renderQueue[zOrderIndex].zOrder = canTopData.renderQueueSize - 1;
             canTopData.renderQueue.push(canTopData.renderQueue[zOrderIndex]);
             canTopData.renderQueue.splice(zOrderIndex, 1);
@@ -860,11 +879,18 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
                 dc.closePath();
 
-                //if (mx >= (designHotSpots[0] + activeItem.x) && mx <= (activeItem.width + activeItem.x) && my >= (designHotSpots[1] + activeItem.y) && my <= (activeItem.hotSpotOffsetY[hotSpot] + activeItem.y)) {
                 if (dc.isPointInPath(mx, my)) {
                     pressedItem = activeItem.hotSpots[hotSpot];
                     break;
                 }
+            }
+        }
+
+        // Clean any active cursor positioning on window change
+        if (mouse.cursorItem !== null) {
+            if (canTopData.activeWindow !== mouse.cursorItem.parentWindow) {
+                mouse.cursorItem = null;
+                mouse.cursorAt = [0, 0];
             }
         }
 
@@ -912,12 +938,26 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         }
                         resizeWindowItem(activeItem, newWidth, newHeight);
                         sizeWindowContent(activeItem, newWidth, newHeight);
+
+                        // Update the mouse cursor position and cursorItem itself
+                        if (mouse.cursorItem !== null) {
+                            mouse.cursorItem = getItemInfoAtIndex(mouse.cursorItem.type, activeItem, mouse.cursorItem.itemIndex);
+                            var textWidth = dc.measureText(mouse.cursorItem.data[1].split("\n", 1)[0]).width;
+                            mouse.cursorAt = [mouse.cursorItem.x + 3 + textWidth, mouse.cursorItem.y + 3];
+                        }
+                        return;
                     } else if (pressedItem === "windowContent") {
                         var lockedItem = getLastItemIndex(activeItem);
 
                         if (lockedItem !== null) {
                             var lastItem = activeItem.contentItems[lockedItem];
-                            lg("Pressed item: " + activeItem.title + " / " + lastItem[0]);
+                            lg("Pressed content item: " + activeItem.title + " / " + lastItem[0]);
+
+                            if (lastItem[0] === "contentInputField") {
+                                mouse.cursorItem = getItemInfoAtIndex(lastItem, activeItem, lockedItem);
+                                var textWidth = dc.measureText(mouse.cursorItem.data[1].split("\n", 1)[0]).width;
+                                mouse.cursorAt = [mouse.cursorItem.x + 3 + textWidth, mouse.cursorItem.y + 3];
+                            }
                         }
                         return;
                     }
@@ -1038,6 +1078,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             return;
         }
 
+        var parentWindow = [];
         if (mouse.activeItem !== null) {
             switch (mouse.activeItem.type) {
                 case "window":
@@ -1066,16 +1107,15 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         var trap = canTopData.mouseTraps[trapIndex];
                         var boundary = mouse.activeItem.contentBoundaries[trap[1]];
                         if (trap[0] === mouse.activeItem.id) {
-                            canTopData.mouseTraps[trapIndex] = [trap[0], trap[1], mouse.activeItem.contentArea[0] + boundary[0], mouse.activeItem.contentArea[1] + boundary[1], trap[4], trap[5], trap[6]]
+                            canTopData.mouseTraps[trapIndex] = [trap[0], trap[1], mouse.activeItem.contentArea[0] + boundary[0], mouse.activeItem.contentArea[1] + boundary[1], trap[4], trap[5], trap[6]];
                         }
                     }
 
                     break;
                 case "contentScrollbarPlugY":
                 case "contentScrollbarPlugX":
-                    var parentWindow = canTopData.renderQueue[mouse.activeItem.parentWindow];
-
                     if (mouse.activeItem.action === "scrollY") {
+                        var parentWindow = getWindowById(mouse.activeItem.parentWindow);
                         var itemBaseY = design[mouse.activeItem.type][5];
                         var itemHeight = parentWindow.contentBoundaries[mouse.activeItem.itemIndex][3];
                         var scrollHeight = parentWindow.contentArea[3] - (itemBaseY + itemHeight);
@@ -1103,6 +1143,13 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         }
                     }
                     break;
+            }
+
+            if (mouse.cursorItem !== null) {
+                if (mouse.activeItem.id === mouse.cursorItem.parentWindow) {
+                    mouse.cursorAt[0] -= (mouse.previousX - mouse.x);
+                    mouse.cursorAt[1] -= (mouse.previousY - mouse.y);
+                }
             }
 
             mouse.previousX = mouse.x;
@@ -1340,22 +1387,22 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             if (item.type === 0) {
                 if (!item.open) {
                     if (item.selected) {
-                        dc.drawImage(design.imageMap, ctFolderIcon[2][2][0], ctFolderIcon[2][2][1], ctFolderIcon[0], ctFolderIcon[1], item.x, item.y, item.width, ctFolderIcon[1]);
+                        dc.drawImage(design.imageMap, design.folderIcon[2][2][0], design.folderIcon[2][2][1], design.folderIcon[0], design.folderIcon[1], item.x, item.y, item.width, design.folderIcon[1]);
                     } else {
-                        dc.drawImage(design.imageMap, ctFolderIcon[2][0][0], ctFolderIcon[2][0][1], ctFolderIcon[0], ctFolderIcon[1], item.x, item.y, item.width, ctFolderIcon[1]);
+                        dc.drawImage(design.imageMap, design.folderIcon[2][0][0], design.folderIcon[2][0][1], design.folderIcon[0], design.folderIcon[1], item.x, item.y, item.width, design.folderIcon[1]);
                     }
-                    dc.fillStyle = ctFolderIcon[3][0];
+                    dc.fillStyle = design.folderIcon[3][0];
                 } else {
                     if (item.selected) {
-                        dc.drawImage(design.imageMap, ctFolderIcon[2][3][0], ctFolderIcon[2][3][1], ctFolderIcon[0], ctFolderIcon[1], item.x, item.y, item.width, ctFolderIcon[1]);
+                        dc.drawImage(design.imageMap, design.folderIcon[2][3][0], design.folderIcon[2][3][1], design.folderIcon[0], design.folderIcon[1], item.x, item.y, item.width, design.folderIcon[1]);
                     } else {
-                        dc.drawImage(design.imageMap, ctFolderIcon[2][1][0], ctFolderIcon[2][1][1], ctFolderIcon[0], ctFolderIcon[1], item.x, item.y, item.width, ctFolderIcon[1]);
+                        dc.drawImage(design.imageMap, design.folderIcon[2][1][0], design.folderIcon[2][1][1], design.folderIcon[0], design.folderIcon[1], item.x, item.y, item.width, design.folderIcon[1]);
                     }
-                    dc.fillStyle = ctFolderIcon[3][1];
+                    dc.fillStyle = design.folderIcon[3][1];
                 }
 
                 dc.textAlign = "center";
-                dc.fillText(item.title, item.x + (item.width / 2), ctFolderIcon[1] + item.y + 5);
+                dc.fillText(item.title, item.x + (item.width / 2), design.folderIcon[1] + item.y + 5);
             }
         }
     }
@@ -1379,6 +1426,9 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         var colors = [];
         var posX = 0;
         var posY = 0;
+        var coords = [];
+        var sizeX = 0;
+        var sizeY = 0;
 
         for (index = 0; index < contentItems.length; index++) {
             contentItem = contentItems[index];
@@ -1389,21 +1439,38 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                 drawingMethod = designItem[0][subIndex];
                 fillMethod = designItem[1][subIndex];
                 colors = designItem[2][subIndex];
-
+                coords = designItem[3][subIndex];
                 posX = contentArea[0] + itemBoundaries[0];
                 posY = itemBoundaries[1];
+
+                sizeX = itemBoundaries[2];
+                sizeY = itemBoundaries[3];
+                useStroke = true;
+                if (coords[0] > 0) {
+                    posX += coords[0];
+                    sizeX -= (coords[0] * 2);
+                    useStroke = false;
+                }
+
+                if (coords[1] > 0) {
+                    posY += coords[1];
+                    sizeY -= (coords[1] * 2);
+                    useStroke = false;
+                }
 
                 drawType = fillMethod.split("_", 2);
                 if (drawType[0] === "solid") {
                     dc.fillStyle = colors[0];
                 } else if (drawType[0] === "gradient") {
-                    dc.fillStyle = createGradient(drawType[1], contentArea[0] + posX, contentArea[1] + posY, itemBoundaries[2], itemBoundaries[3]);
+                    dc.fillStyle = createGradient(drawType[1], posX, contentArea[1] + posY, sizeX, sizeY);
                 }
 
                 if (drawingMethod === "rect") {
                     dc.lineWidth = 1;
-                    dc.strokeRect(posX, contentArea[1] + posY, itemBoundaries[2], itemBoundaries[3]);
-                    dc.fillRect(posX, contentArea[1] + posY, itemBoundaries[2], itemBoundaries[3]);
+                    if (useStroke) {
+                        dc.strokeRect(posX, contentArea[1] + posY, sizeX, sizeY);
+                    }
+                    dc.fillRect(posX, contentArea[1] + posY, sizeX, sizeY);
                 }
             }
         }
@@ -1442,18 +1509,52 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             }
 
             dc.restore();
-            windowItem.contentHeight = (items.length * 18);
+        } else if (windowItem.mode === "app") {
+            for (index = 0; index < contentItems.length; index++) {
+                if (contentItems[index][0] === "contentInputField") {
+                    var itemDetails = getItemInfoAtIndex(contentItems[index], windowItem, index);
+                    var textWidth = dc.measureText(itemDetails.data[1]).width;
+                    dc.fillStyle = design.contentInputFieldText[0][1];
+                    dc.fillRect(itemDetails.x, itemDetails.y + 1, textWidth + 5, itemDetails.height - 2);
+                    dc.fillStyle = design.contentInputFieldText[0][0];
+                    dc.textAlign = "left";
+                    dc.fillText(itemDetails.data[1], itemDetails.x + 2, itemDetails.y + itemDetails.height / 1.5);
+                }
+            }
+
+
+            //mouse.cursorItem = getItemInfoAtIndex(lastItem, activeItem, lockedItem);
+            //var textWidth = dc.measureText(mouse.cursorItem.data[1].split("\n", 1)[0]).width;
+        }
+
+        if (mouse.cursorItem !== null) {
+            mouse.cursorBlink++;
+            if (mouse.cursorBlink === mouse.cursorBlinkRate) {
+                mouse.cursorBlink = 0;
+            } else {
+                var cursorItem = mouse.cursorItem;
+                var cursorAt = mouse.cursorAt;
+                dc.beginPath();
+                dc.moveTo(cursorAt[0], cursorAt[1]);
+                dc.lineTo(cursorAt[0], cursorAt[1] + (cursorItem.height - 6));
+                dc.closePath();
+                dc.strokeStyle = design.textCursor[0];
+                dc.lineWidth = design.textCursor[1];
+                dc.stroke();
+                dc.strokeStyle = "#000";
+                dc.lineWidth = 1;
+            }
         }
     }
 
     function createWindowControl(type, value, parentWindowIndex, parentIndex, offsetX, offsetY, sizeX, sizeY) {
         var parentWindow = canTopData.renderQueue[parentWindowIndex];
         // TODO: Start here
-        if (type === "input") {
+        if (type === "inputField") {
             parentWindow.contentBoundaries.push([offsetX, offsetY, sizeX, sizeY, offsetX + sizeX, offsetY + sizeY]);
             parentWindow.contentData.push([parentWindow.contentItems.length, value, "", "", false]);
             parentWindow.contentItems.push(["contentInputField", parentIndex, "both", "pos", "string", value, "", false]);
-            parentWindow.contentActions.push([itemIndex, "setInput"]);
+            parentWindow.contentActions.push([itemIndex, "setWindowTitle"]);
 
             var itemIndex = parentWindow.contentItems.length - 1;
             var windowId = canTopData.renderQueue[parentWindowIndex].id;
@@ -1471,7 +1572,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
         createWindow(design, "app", "Window Testtitle - App Window 4", 420, 240);
         //createWindowControl(type, value, parentWindowIndex, parentIndex, offsetX, offsetY, sizeX, sizeY) {
-        createWindowControl("input", "StringValue", canTopData.renderQueueSize - 1, -1, 20, 20, 70, 14);
+        createWindowControl("inputField", "StringValue", canTopData.renderQueueSize - 1, -1, 20, 20, 70, 18);
 
         // Main loop
         var queueItem = 0;
