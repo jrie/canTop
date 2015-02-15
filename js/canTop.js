@@ -11,7 +11,6 @@ canTopData.lastId = 0;
 // This functions later will be moved into the main function and are not global
 var canvas = document.getElementById("canTopCanvas");
 var dc = canvas.getContext("2d");
-var design = {};
 
 var hasConsole = window.console ? true : false;
 function lg(msg) {
@@ -24,7 +23,7 @@ function lg(msg) {
 
 function getDesign(designName, width, heigth, gridX, gridY) {
 
-    //var design = {};
+    var design = {};
     design.imageMap = new Image();
 
     // Variables for helper functions
@@ -617,7 +616,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         var lockedItem = null;
         for (var item = 0; item < contentBoundaries.length; item++) {
             boundary = contentBoundaries[item];
-            if (mX >= boundary[0] && mX <= boundary[4] && mY >= boundary[1] && mY <= (boundary[1] + boundary[5])) {
+            if (mX >= boundary[0] && mX <= boundary[4] && mY >= boundary[1] && mY <= (boundary[5])) {
                 lockedItem = item;
             }
         }
@@ -632,6 +631,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         item.itemIndex = itemIndex;
         item.pointer = 0;
         item.parentWindow = activeItem.id;
+        item.selection = [0, 0];
+        item.controlPressed = false;
 
         for (var index = 0; index < activeItem.contentData.length; index++) {
             if (activeItem.contentData[index][0] === itemIndex) {
@@ -943,21 +944,31 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         if (mouse.cursorItem !== null) {
                             mouse.cursorItem = getItemInfoAtIndex(mouse.cursorItem.type, activeItem, mouse.cursorItem.itemIndex);
                             var textWidth = dc.measureText(mouse.cursorItem.data[1].split("\n", 1)[0]).width;
-                            mouse.cursorAt = [mouse.cursorItem.x + 3 + textWidth, mouse.cursorItem.y + 3];
+                            mouse.cursorAt = [mouse.cursorItem.x + 3 + textWidth, mouse.cursorItem.y + 3, mouse.cursorAt[2]];
                         }
                         return;
                     } else if (pressedItem === "windowContent") {
                         var lockedItem = getLastItemIndex(activeItem);
+                        // Clean any active cursor positioning on content click
+                        if (mouse.cursorItem !== null) {
+                            mouse.cursorItem = null;
+                            mouse.cursorAt = [0, 0, 0];
+                        }
 
+                        // Handle actions for the last locked content item
                         if (lockedItem !== null) {
                             var lastItem = activeItem.contentItems[lockedItem];
+                            document.removeEventListener("keydown", handleUserInput);
                             lg("Pressed content item: " + activeItem.title + " / " + lastItem[0]);
 
                             if (lastItem[0] === "contentInputField") {
                                 mouse.cursorItem = getItemInfoAtIndex(lastItem, activeItem, lockedItem);
-                                var textWidth = dc.measureText(mouse.cursorItem.data[1].split("\n", 1)[0]).width;
-                                mouse.cursorAt = [mouse.cursorItem.x + 3 + textWidth, mouse.cursorItem.y + 3];
+                                var text = mouse.cursorItem.data[1];
+                                var textWidth = dc.measureText(text).width;
+                                mouse.cursorAt = [mouse.cursorItem.x + 3 + textWidth, mouse.cursorItem.y + 3, text.length - 1];
+                                document.addEventListener("keydown", handleUserInput);
                             }
+
                         }
                         return;
                     }
@@ -1360,7 +1371,102 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         }
 
         windowItem.contentArea = [windowItem.x, windowItem.y + windowItem.hotSpotOffsetY[0], width, windowItem.drawData[1][2][3] - windowItem.hotSpotOffsetY[0], [offsetX, offsetY, spaceX, spaceY], [0, 0]];
+    }
 
+    function handleUserInput(evt) {
+        if (mouse.cursorItem === null) {
+            return;
+        }
+
+        var text = mouse.cursorItem.data[1];
+        var cursorIndex = -1;
+        switch (evt.keyCode) {
+            case 9:
+                // Tabulator
+                evt.preventDefault();
+                break;
+            case 32:
+                // Spacebar
+                evt.preventDefault();
+                break;
+            case 13:
+                // Enter key
+                if (mouse.cursorItem.action === "setWindowTitle") {
+                    getWindowById(mouse.cursorItem.parentWindow).title = mouse.cursorItem.data[1];
+                }
+                return;
+                break;
+            case 17:
+                // Control/Strg key
+                return;
+                break;
+            case 8:
+                // Backspace key
+                evt.preventDefault();
+                cursorIndex = mouse.cursorAt[2];
+
+                if (cursorIndex > -1) {
+                    var letterWidth = dc.measureText(text.substr(cursorIndex, 1)).width;
+                    mouse.cursorAt[0] -= letterWidth;
+                    mouse.cursorItem.data[1] = mouse.cursorItem.data[1].substr(0, cursorIndex);
+                    mouse.cursorAt[2] -= 1;
+                }
+                return;
+                break;
+            case 16:
+                //  Shift key
+                /*
+                 mouse.cursorItem.selection = [0, 0];
+                 mouse.cursorItem.controlPressed = !mouse.cursorItem.controlPressed;
+                 mouse.cursorItem.selection[0] = mouse.cursorAt[2];
+                 mouse.cursorItem.selection[1] = mouse.cursorAt[2];
+                 */
+                return;
+                break;
+
+            case 37:
+                // Arrow key left
+                cursorIndex = mouse.cursorAt[2];
+
+                if (cursorIndex > -1) {
+                    var letterWidth = dc.measureText(text.substr(cursorIndex, 1)).width;
+                    mouse.cursorAt = [mouse.cursorAt[0] - letterWidth, mouse.cursorAt[1], mouse.cursorAt[2] - 1];
+                }
+                /*
+                 if (mouse.cursorItem.controlPressed) {
+                 mouse.cursorItem.selection[1] = cursorIndex;
+                 }
+                 */
+                return;
+                break;
+
+            case 39:
+                // Arrow key right
+                cursorIndex = mouse.cursorAt[2];
+                if (cursorIndex < text.length - 1) {
+                    var letterWidth = dc.measureText(text.substr(cursorIndex, 1)).width;
+                    mouse.cursorAt = [mouse.cursorAt[0] + letterWidth, mouse.cursorAt[1], mouse.cursorAt[2] + 1];
+                }
+                /*
+                 if (mouse.cursorItem.controlPressed) {
+                 mouse.cursorItem.selection[1] = text.length;
+                 }
+                 */
+                return;
+                break;
+
+        }
+
+        if (evt.key.length === 1) {
+            var letterWidth = dc.measureText(evt.key).width;
+            var maxWidth = mouse.cursorItem.width + mouse.cursorItem.x - 4;
+            if ((mouse.cursorAt[0] + letterWidth) > maxWidth) {
+                return;
+            }
+            mouse.cursorAt[0] += letterWidth;
+            mouse.cursorItem.data[1] = mouse.cursorItem.data[1] + evt.key;
+            mouse.cursorAt[2] += 1;
+        }
     }
 
     // Render item creation functions
@@ -1429,6 +1535,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         var coords = [];
         var sizeX = 0;
         var sizeY = 0;
+        var useStroke = false;
 
         for (index = 0; index < contentItems.length; index++) {
             contentItem = contentItems[index];
@@ -1521,13 +1628,34 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                     dc.fillText(itemDetails.data[1], itemDetails.x + 2, itemDetails.y + itemDetails.height / 1.5);
                 }
             }
-
-
-            //mouse.cursorItem = getItemInfoAtIndex(lastItem, activeItem, lockedItem);
-            //var textWidth = dc.measureText(mouse.cursorItem.data[1].split("\n", 1)[0]).width;
         }
 
         if (mouse.cursorItem !== null) {
+            /*
+             var minSelection = Math.min(mouse.cursorItem.selection[0], mouse.cursorItem.selection[1]);
+             var maxSelection = Math.max(mouse.cursorItem.selection[0], mouse.cursorItem.selection[1]);
+             if (minSelection > -1) {
+             var textData = mouse.cursorItem.data[1];
+             var selectionLength = maxSelection - minSelection;
+
+             var selectedData = textData.substr(minSelection, selectionLength - 1);
+             var leftOverData = textData.substr(0, minSelection);
+             var textWidth = dc.measureText(leftOverData).width;
+             var selectedWidth = dc.measureText(selectedData).width;
+             if (selectedData.length !== 0) {
+             dc.fillStyle = design.contentInputFieldText[1][1];
+             dc.fillRect(mouse.cursorItem.x + textWidth, mouse.cursorItem.y + 1, selectedWidth + 5, mouse.cursorItem.height - 2);
+             }
+             dc.fillStyle = design.contentInputFieldText[0][0];
+             dc.textAlign = "left";
+             dc.fillText(leftOverData, mouse.cursorItem.x + 2, mouse.cursorItem.y + mouse.cursorItem.height / 1.5);
+
+             if (selectedData.length !== 0) {
+             dc.fillStyle = design.contentInputFieldText[1][0];
+             dc.fillText(selectedData, mouse.cursorItem.x + 2 + textWidth, mouse.cursorItem.y + mouse.cursorItem.height / 1.5);
+             }
+             }
+             */
             mouse.cursorBlink++;
             if (mouse.cursorBlink === mouse.cursorBlinkRate) {
                 mouse.cursorBlink = 0;
@@ -1536,7 +1664,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                 var cursorAt = mouse.cursorAt;
                 dc.beginPath();
                 dc.moveTo(cursorAt[0], cursorAt[1]);
-                dc.lineTo(cursorAt[0], cursorAt[1] + (cursorItem.height - 6));
+                dc.lineTo(cursorAt[0], cursorAt[1] + 12);
                 dc.closePath();
                 dc.strokeStyle = design.textCursor[0];
                 dc.lineWidth = design.textCursor[1];
@@ -1572,7 +1700,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
         createWindow(design, "app", "Window Testtitle - App Window 4", 420, 240);
         //createWindowControl(type, value, parentWindowIndex, parentIndex, offsetX, offsetY, sizeX, sizeY) {
-        createWindowControl("inputField", "StringValue", canTopData.renderQueueSize - 1, -1, 20, 20, 70, 18);
+        createWindowControl("inputField", "Enter new window title", canTopData.renderQueueSize - 1, -1, 20, 20, 150, 18);
+        createWindowControl("inputField", "An addional field", canTopData.renderQueueSize - 1, -1, 20, 60, 120, 18);
 
         // Main loop
         var queueItem = 0;
