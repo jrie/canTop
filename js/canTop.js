@@ -419,7 +419,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     mouse.previousX = 0;
     mouse.previousY = 0;
     // The threshold counts the pixels the mouse can offset from its initial click position so the click is still counted
-    mouse.threshold = 25;
+    mouse.threshold = 15;
     mouse.offsetX = canvas.offsetLeft;
     mouse.offsetY = canvas.offsetTop;
     mouse.current = "default";
@@ -614,8 +614,10 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         var mX = mouse.x - (windowItem.contentArea[0] + canvas.offsetLeft);
         var mY = mouse.y - (windowItem.contentArea[1] + windowItem.hotSpotOffsetY[0]);
         var lockedItem = null;
+        lg(mX + " - " + mY);
         for (var item = 0; item < contentBoundaries.length; item++) {
             boundary = contentBoundaries[item];
+            lg(boundary)
             if (mX >= boundary[0] && mX <= boundary[4] && mY >= boundary[1] && mY <= (boundary[5])) {
                 lockedItem = item;
             }
@@ -776,8 +778,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     // The actual mouse click handler
     function doClick() {
 
-        var mx = mouse.x - mouse.offsetX;
-        var my = mouse.y - mouse.offsetY;
+        var mX = mouse.x - mouse.offsetX;
+        var mY = mouse.y - mouse.offsetY;
 
         var item = {};
         var hotSpot = 0;
@@ -794,7 +796,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         index = canTopData.renderQueueSize;
         while (index--) {
             item = canTopData.renderQueue[index];
-            if (mx >= item.x && mx <= (item.x + item.width) && my >= item.y && my <= (item.y + item.height)) {
+            if (mX >= item.x && mX <= (item.x + item.width) && mY >= item.y && mY <= (item.y + item.height)) {
                 if (zOrderIndex < item.zOrder) {
                     activeItem = item;
                     zOrderIndex = item.zOrder;
@@ -880,7 +882,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
                 dc.closePath();
 
-                if (dc.isPointInPath(mx, my)) {
+                if (dc.isPointInPath(mX, mY)) {
                     pressedItem = activeItem.hotSpots[hotSpot];
                     break;
                 }
@@ -1046,7 +1048,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         index = canTopData.renderItems.length;
         while (index--) {
             item = canTopData.renderItems[index];
-            if (mx >= item.x && mx <= (item.x + item.width) && my >= item.y && my <= (item.y + item.height)) {
+            if (mX >= item.x && mX <= (item.x + item.width) && mY >= item.y && mY <= (item.y + item.height)) {
                 if (mouse.clickCount > 1) {
                     clearInterval(mouse.clickInternval);
                     mouse.clickInternval = null;
@@ -1132,12 +1134,15 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         var scrollHeight = parentWindow.contentArea[3] - (itemBaseY + itemHeight);
 
                         parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] -= (mouse.previousY - mouse.y);
+                        parentWindow.contentBoundaries[mouse.activeItem.itemIndex][5] -= (mouse.previousY - mouse.y);
                         var scrollPercentage = 0;
                         if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] <= itemBaseY) {
                             parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = itemBaseY;
+                            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][5] = parentWindow.contentBoundaries[mouse.activeItem.itemIndex][3] + itemBaseY;
                             scrollPercentage = 0;
                         } else if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] >= scrollHeight) {
                             parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = scrollHeight;
+                            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][5] = scrollHeight + itemHeight;
                             scrollPercentage = 1;
                         } else {
                             scrollPercentage = (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] - itemBaseY) / scrollHeight;
@@ -1698,7 +1703,6 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             if (mouse.cursorBlink === mouse.cursorBlinkRate) {
                 mouse.cursorBlink = 0;
             } else {
-                var cursorItem = mouse.cursorItem;
                 var cursorAt = mouse.cursorAt;
                 dc.beginPath();
                 dc.moveTo(cursorAt[0], cursorAt[1]);
