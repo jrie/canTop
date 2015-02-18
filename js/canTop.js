@@ -1138,11 +1138,11 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         var scrollPercentage = 0;
                         if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] <= itemBaseY) {
                             parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = itemBaseY;
-                            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][5] = parentWindow.contentBoundaries[mouse.activeItem.itemIndex][3] + itemBaseY;
+                            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][5] = parentWindow.contentBoundaries[mouse.activeItem.itemIndex][3] + itemBaseY + itemHeight;
                             scrollPercentage = 0;
                         } else if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] >= scrollHeight) {
                             parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = scrollHeight;
-                            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][5] = scrollHeight + itemHeight;
+                            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][5] = scrollHeight + itemHeight + itemBaseY;
                             scrollPercentage = 1;
                         } else {
                             scrollPercentage = (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] - itemBaseY) / scrollHeight;
