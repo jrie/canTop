@@ -1268,6 +1268,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                 if (mouse.activeItem.id === mouse.cursorItem.parentWindow) {
                     mouse.cursorAt[0] -= (mouse.previousX - mouse.x);
                     mouse.cursorAt[1] -= (mouse.previousY - mouse.y);
+                    mouse.cursorItem.x -= (mouse.previousX - mouse.x);
+                    mouse.cursorItem.y -= (mouse.previousY - mouse.y);
                 }
             }
 
