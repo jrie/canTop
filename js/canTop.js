@@ -722,7 +722,6 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             case "draw":
             default:
                 var drawType = design.background[1].split("_", 2);
-                dc.rect(0, 0, width, height);
                 switch (drawType[0]) {
                     case "solid":
                     default:
@@ -733,7 +732,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         break;
                 }
 
-                dc.fill();
+                dc.fillRect(0, 0, width, height);
         }
     }
 
