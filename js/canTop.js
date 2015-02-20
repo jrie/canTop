@@ -1258,8 +1258,6 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         } else {
                             parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] = itemBaseX;
                         }
-
-
                     }
                     break;
             }
@@ -1855,21 +1853,17 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             if (minSelection > -1) {
                 var textData = mouse.cursorItem.data[1];
                 var selectedData = textData.substring(minSelection, maxSelection);
-                var leftOverData = textData.substring(0, minSelection);
-                var textWidth = dc.measureText(leftOverData).width;
+                var textWidth = dc.measureText(textData.substring(0, minSelection)).width;
                 var selectedWidth = dc.measureText(selectedData).width;
 
                 if (selectedData.length !== 0) {
                     dc.fillStyle = design.contentInputFieldText[1][1];
-                    dc.fillRect(mouse.cursorItem.x + textWidth + 2 - offsetX, mouse.cursorItem.y + 1 - offsetY, selectedWidth + 1, mouse.cursorItem.height - 2);
+                    dc.fillRect(mouse.cursorItem.x + textWidth + 2 - offsetX, mouse.cursorAt[1] - 2 - offsetY, selectedWidth + 1, mouse.cursorItem.height - 2);
                 }
                 if (selectedData.length !== 0) {
                     dc.fillStyle = design.contentInputFieldText[1][0];
-                    dc.fillText(selectedData, mouse.cursorItem.x + 2 + textWidth - offsetX, (mouse.cursorItem.y + (mouse.cursorItem.height / 1.5)) - offsetY);
+                    dc.fillText(selectedData, mouse.cursorItem.x + 2 + textWidth - offsetX, mouse.cursorAt[1] + 9 - offsetY);
                 }
-                dc.fillStyle = design.contentInputFieldText[0][0];
-                dc.textAlign = "left";
-                dc.fillText(leftOverData, mouse.cursorItem.x + 2 - offsetX, (mouse.cursorItem.y + (mouse.cursorItem.height / 1.5)) - offsetY);
             }
 
             mouse.cursorBlink++;
