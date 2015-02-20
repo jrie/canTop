@@ -105,7 +105,7 @@ function getDesign(designName, width, heigth, gridX, gridY) {
             design.contentScrollbarPlugX = [["rect"], ["solid"], [["#ddd"]], [[0, 0, 15, 6]], 3, 4];
 
             // Interactive elements
-            design.textCursor = ["#888", 1];
+            design.textCursor = ["#fff", 1];
             design.contentInputField = [["rect", "rect"], ["solid", "solid"], [["#999"], ["#333"]], [[0, 0, 100, 20], [1, 1, 97, 17]], 0, 0];
             design.contentInputFieldText = [["#fff", "transparent"], ["#009900", "#00003a"]];
             break;
@@ -444,6 +444,11 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     mouse.y = 0;
     mouse.previousX = 0;
     mouse.previousY = 0;
+
+    if (useCustomMouse) {
+        canvas.style.cursor = "none";
+    }
+
     // The threshold counts the pixels the mouse can offset from its initial click position so the click is still counted
     mouse.threshold = 15;
     mouse.offsetX = canvas.offsetLeft;
@@ -1614,8 +1619,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         if (evt.key.length === 1) {
             var letterWidth = dc.measureText(evt.key).width;
             var textWidth = dc.measureText(text).width;
-            var maxWidth = mouse.cursorItem.width;
-            if ((textWidth + letterWidth) > maxWidth - 10) {
+            var maxWidth = mouse.cursorItem.width - 10;
+            if ((textWidth + letterWidth) > maxWidth) {
                 return;
             }
             cursorIndex = mouse.cursorAt[2];
