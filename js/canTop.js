@@ -1023,7 +1023,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         // Handle actions for the last locked content item
                         if (lockedItem !== null) {
                             var lastItem = activeItem.contentItems[lockedItem];
-                            document.removeEventListener("keydown", handleUserInput);
+                            document.removeEventListener("keydown", handleInputFieldInput);
                             lg("Pressed content item: " + activeItem.title + " / " + lastItem[0]);
 
                             if (lastItem[0] === "contentInputField") {
@@ -1031,7 +1031,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                                 var text = mouse.cursorItem.data[1];
                                 var textWidth = dc.measureText(text).width;
                                 mouse.cursorAt = [mouse.cursorItem.x + 3 + textWidth, mouse.cursorItem.y + 3, text.length - 1];
-                                document.addEventListener("keydown", handleUserInput);
+                                document.addEventListener("keydown", handleInputFieldInput);
                             }
 
                         }
@@ -1497,7 +1497,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         windowItem.contentArea = [windowItem.x, windowItem.y + windowItem.hotSpotOffsetY[0], width, windowItem.drawData[1][2][3] - windowItem.hotSpotOffsetY[0], [offsetX, offsetY, spaceX, spaceY], [0, 0]];
     }
 
-    function handleUserInput(evt) {
+    function handleInputFieldInput(evt) {
+        // Dont accept user input if not targetted
         if (evt.target.nodeName === "input" || evt.target.nodeName === "textarea") {
             return;
         }
