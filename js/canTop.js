@@ -1498,6 +1498,10 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     }
 
     function handleUserInput(evt) {
+        if (evt.targetNodeName === "input" || evt.target.nodeName === "textarea") {
+            return;
+        }
+
         if (mouse.cursorItem === null) {
             return;
         }
@@ -1822,7 +1826,6 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                     }
 
                     if (!hasDrawnSelection && windowItem.id === canTopData.activeWindow && (mouse.x - mouse.offsetX) > contentArea[0] && (mouse.x - mouse.offsetX) < (contentArea[0] + contentArea[2])) {
-                        lg(windowItem)
                         var mouseY = mouse.y - (mouse.offsetY + 6);
                         if (offsetY >= mouseY + contentArea[5][1]) {
                             dc.fillStyle = "rgba(0,0,0, 0.75)";
@@ -1902,7 +1905,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         dc.restore();
     }
 
-    function createWindowControl(type, value, parentWindowIndex, parentIndex, offsetX, offsetY, sizeX, sizeY) {
+    function createWindowControl(type, value, parentWindowIndex, parentIndex, offsetX, offsetY, sizeX, sizeY, functionName) {
         var parentWindow = canTopData.renderQueue[parentWindowIndex];
         // TODO: Start here
         if (type === "inputField") {
@@ -1917,7 +1920,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
             var itemIndex = parentWindow.contentItems.length - 1;
             var windowId = canTopData.renderQueue[parentWindowIndex].id;
-            parentWindow.contentActions.push([itemIndex, "setWindowTitle"]);
+            parentWindow.contentActions.push([itemIndex, functionName]);
 
             canTopData.mouseTraps.push([windowId, itemIndex, parentWindow.contentArea[0] + offsetX, parentWindow.contentArea[1] + offsetY, sizeX, sizeY, "text"]);
         }
@@ -1933,9 +1936,10 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
 
         createWindow(design, "app", "Window Testtitle - App Window 4", 420, 240);
         //createWindowControl(type, value, parentWindowIndex, parentIndex, offsetX, offsetY, sizeX, sizeY) {
-        createWindowControl("inputField", "Enter new window title here", canTopData.renderQueueSize - 1, -1, 20, 20, 150, 18);
-        createWindowControl("inputField", "An additional field", canTopData.renderQueueSize - 1, -1, 20, 60, 120, 18);
-        createWindowControl("inputField", "An additional field", canTopData.renderQueueSize - 1, -1, 20, 160, 120, 18);
+        var lastWindow = canTopData.renderQueueSize - 1;
+        createWindowControl("inputField", "Enter new window title here", lastWindow, -1, 20, 20, 150, 18, "setWindowTitle");
+        createWindowControl("inputField", "An additional field", lastWindow, -1, 20, 60, 120, 18, "setWindowTitle");
+        createWindowControl("inputField", "An additional field", lastWindow, -1, 20, 160, 120, 18, "setWindowTitle");
 
         // Main loop
         var queueItem = 0;
