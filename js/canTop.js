@@ -1807,8 +1807,9 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             // Clip the drawable area by the dimensions of the content area
             var measurementItem = [];
             var calculatedWidth = 0;
-            windowItem.contentWidth = 0;
+            var hasDrawnSelection = false;
 
+            windowItem.contentWidth = 0;
             for (var item = 0; item < items.length; item++) {
                 currentItem = items[item];
 
@@ -1818,6 +1819,16 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                     calculatedWidth = dc.measureText(measurementItem[1]).width + dc.measureText(measurementItem[2][0][3]).width + dc.measureText(measurementItem[2][1][3]).width + 135;
                     if (windowItem.contentWidth < calculatedWidth) {
                         windowItem.contentWidth = calculatedWidth;
+                    }
+
+                    if (!hasDrawnSelection && windowItem.id === canTopData.activeWindow && (mouse.x - mouse.offsetX) > contentArea[0] && (mouse.x - mouse.offsetX) < (contentArea[0] + windowItem.contentWidth)) {
+                        lg(windowItem)
+                        var mouseY = mouse.y - (mouse.offsetY + 6);
+                        if (offsetY >= mouseY + contentArea[5][1]) {
+                            dc.fillStyle = "rgba(0,0,0, 0.75)";
+                            dc.fillRect(contentArea[0], offsetY - (contentArea[5][1] + 12), contentArea[2], 18);
+                            hasDrawnSelection = true;
+                        }
                     }
                     if (currentItem[0] === 0) {
                         dc.fillStyle = "#aaaa00";
