@@ -1498,7 +1498,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     }
 
     function handleUserInput(evt) {
-        if (evt.targetNodeName === "input" || evt.target.nodeName === "textarea") {
+        if (evt.target.nodeName === "input" || evt.target.nodeName === "textarea") {
             return;
         }
 
