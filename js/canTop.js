@@ -1507,6 +1507,31 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             return;
         }
 
+        if (evt.keyCode === 9) {
+            // Tab key pressed
+            evt.preventDefault();
+            if (mouse.cursorItem.type !== "contentInputArea") {
+                var parentWindow = getWindowById(mouse.cursorItem.parentWindow);
+                var contentItems = parentWindow.contentItems;
+
+                var index = mouse.cursorItem.itemIndex === contentItems.length - 1 ? 0 : mouse.cursorItem.itemIndex + 1;
+
+                for (index; index < contentItems.length; index++) {
+                    if (contentItems[index][0] === "contentInputField") {
+                        mouse.cursorItem = getItemInfoAtIndex(contentItems[index], parentWindow, index);
+                        var text = mouse.cursorItem.data[1];
+                        mouse.cursorAt = [mouse.cursorItem.x + 3 + dc.measureText(text).width, mouse.cursorItem.y + 3, text.length - 1];
+                        parentWindow.contentArea[5][1] = 0;
+                        if (parentWindow.contentBoundaries[index][1] > parentWindow.contentArea[4][3]) {
+                            parentWindow.contentArea[5][1] = parentWindow.contentBoundaries[index][1] - (parentWindow.contentArea[4][3] - 18);
+                        }
+                        break;
+                    }
+                }
+            }
+            return;
+        }
+
         var text = mouse.cursorItem.data[1];
         var cursorIndex = -1;
         switch (evt.keyCode) {
@@ -1939,8 +1964,8 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         //createWindowControl(type, value, parentWindowIndex, parentIndex, offsetX, offsetY, sizeX, sizeY) {
         var lastWindow = canTopData.renderQueueSize - 1;
         createWindowControl("inputField", "Enter new window title here", lastWindow, -1, 20, 20, 150, 18, "setWindowTitle");
-        createWindowControl("inputField", "An additional field", lastWindow, -1, 20, 60, 120, 18, "setWindowTitle");
-        createWindowControl("inputField", "An additional field", lastWindow, -1, 20, 160, 120, 18, "setWindowTitle");
+        createWindowControl("inputField", "Or right in this textfield", lastWindow, -1, 20, 60, 120, 18, "setWindowTitle");
+        createWindowControl("inputField", "Press Enter", lastWindow, -1, 20, 160, 120, 18, "setWindowTitle");
 
         // Main loop
         var queueItem = 0;
