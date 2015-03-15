@@ -1821,7 +1821,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         windowItem.contentWidth = calculatedWidth;
                     }
 
-                    if (!hasDrawnSelection && windowItem.id === canTopData.activeWindow && (mouse.x - mouse.offsetX) > contentArea[0] && (mouse.x - mouse.offsetX) < (contentArea[0] + windowItem.contentWidth)) {
+                    if (!hasDrawnSelection && windowItem.id === canTopData.activeWindow && (mouse.x - mouse.offsetX) > contentArea[0] && (mouse.x - mouse.offsetX) < (contentArea[0] + contentArea[2])) {
                         lg(windowItem)
                         var mouseY = mouse.y - (mouse.offsetY + 6);
                         if (offsetY >= mouseY + contentArea[5][1]) {
