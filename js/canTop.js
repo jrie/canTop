@@ -4,7 +4,7 @@ canTopData.activeSelection = [];
 canTopData.renderItems = [];
 canTopData.renderQueue = [];
 canTopData.renderQueueSize = 0;
-canTopData.activeWindow = false;
+canTopData.activeWindow = null;
 canTopData.mouseTraps = [];
 canTopData.lastId = 0;
 
@@ -811,6 +811,62 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         dc.strokeStyle = "#000";
     }
 
+    // Mouse wheel handler
+    function checkWheel(evt) {
+        if (canTopData.activeWindow === null) {
+            return;
+        }
+
+        var window = getWindowById(canTopData.activeWindow);
+        if (window.contentHeight > window.contentArea[3]) {
+            var scrollHeight = window.contentArea[3] / 5;
+            window.contentArea[5][1] += evt.deltaY > 0 ? scrollHeight : -scrollHeight;
+
+            // Check if we have a scrollbar
+            var verticalScrollbarIndex = -1;
+            for (var index = 0; index < window.contentItems.length; index++) {
+                if (window.contentItems[index][0] === "contentScrollbarPlugY") {
+                    verticalScrollbarIndex = index;
+                    break;
+                }
+            }
+
+            if (window.contentArea[5][1] < 0) {
+                window.contentArea[5][1] = 0;
+            }
+
+            if (window.contentArea[5][1] >= window.contentHeight - window.contentArea[4][3]) {
+                window.contentArea[5][1] = window.contentHeight - window.contentArea[4][3];
+            }
+
+
+            if (verticalScrollbarIndex !== -1) {
+                var scrollProgress = 0;
+                if (window.contentArea[5][1] !== 0) {
+                    scrollProgress = window.contentArea[5][1] / (window.contentHeight - window.contentArea[4][3]);
+                }
+
+                lg(scrollProgress);
+
+                var itemBaseY = design["contentScrollbarPlugY"][5];
+                var itemHeight = window.contentBoundaries[verticalScrollbarIndex][3];
+                var scrollHeight = window.contentArea[4][3] - (itemBaseY + itemHeight);
+
+                window.contentBoundaries[verticalScrollbarIndex][1] = scrollHeight * scrollProgress;
+                window.contentBoundaries[verticalScrollbarIndex][5] = (scrollHeight * scrollProgress) + itemBaseY + itemHeight;
+
+                if (window.contentBoundaries[verticalScrollbarIndex][1] <= itemBaseY) {
+                    window.contentBoundaries[verticalScrollbarIndex][1] = itemBaseY;
+                    window.contentBoundaries[verticalScrollbarIndex][5] = window.contentBoundaries[verticalScrollbarIndex][3] + itemBaseY + itemHeight;
+                }
+
+            }
+
+
+
+        }
+    }
+
     // Click handler to check count of clicks
     function checkClick(evt) {
         mouse.clickCount++;
@@ -853,7 +909,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         var pressedItem = false;
 
         // Reset the active selection on click and select later
-        canTopData.activeWindow = false;
+        canTopData.activeWindow = null;
 
         // Check window clicks
         index = canTopData.renderQueueSize;
@@ -1087,8 +1143,10 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         canTopData.renderQueueSize--;
 
                         index = canTopData.renderQueueSize - 1;
-                        while (index--) {
-                            canTopData.renderQueue[index].zOrder = index;
+                        if (index > 0) {
+                            while (index--) {
+                                canTopData.renderQueue[index].zOrder = index;
+                            }
                         }
 
                         return;
@@ -1228,7 +1286,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         var itemBaseX = design[mouse.activeItem.type][4] + design[mouse.activeItem.type][6][2];
                         var itemWidth = parentWindow.contentBoundaries[mouse.activeItem.itemIndex][2];
 
-                        // Dynamically get the boundary for the scorlling
+                        // Dynamically get the boundary for scrolling
                         var scrollWidth = parentWindow.contentArea[4][2] - (itemBaseX);
                         var itemBaseX = 0;
                         if (parentWindow.contentArea[4][0] > 0) {
@@ -2031,6 +2089,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
         canvas.addEventListener("mousedown", activateMovement);
         canvas.addEventListener("mouseup", deactivateMovement);
         canvas.addEventListener("mouseout", deactivateMovement);
+        canvas.addEventListener("wheel", checkWheel);
 
         // Get the right offset values after window resizing
         window.addEventListener("resize", function () {
