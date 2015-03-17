@@ -1135,7 +1135,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                         for (var trap = 0; trap < canTopData.mouseTraps.length; trap++) {
                             if (canTopData.mouseTraps[trap][0] === activeItem.id) {
                                 canTopData.mouseTraps.splice(trap, 1);
-                                break;
+                                trap--;
                             }
                         }
 
