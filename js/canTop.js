@@ -825,9 +825,12 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
             // Check if we have a scrollbar
             var verticalScrollbarIndex = -1;
             for (var index = 0; index < window.contentItems.length; index++) {
+                // Select a scrollbar plug for animation which parent item parentIndex is -1 (the main window)
                 if (window.contentItems[index][0] === "contentScrollbarPlugY") {
-                    verticalScrollbarIndex = index;
-                    break;
+                    if (window.contentItems[window.contentItems[index][1]][1] === -1) {
+                        verticalScrollbarIndex = index;
+                        break;
+                    }
                 }
             }
 
@@ -845,8 +848,6 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                 if (window.contentArea[5][1] !== 0) {
                     scrollProgress = window.contentArea[5][1] / (window.contentHeight - window.contentArea[4][3]);
                 }
-
-                lg(scrollProgress);
 
                 var itemBaseY = design["contentScrollbarPlugY"][5];
                 var itemHeight = window.contentBoundaries[verticalScrollbarIndex][3];
