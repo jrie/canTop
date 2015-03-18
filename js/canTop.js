@@ -1068,6 +1068,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                             var textWidth = dc.measureText(mouse.cursorItem.data[1].split("\n", 1)[0]).width;
                             mouse.cursorAt = [mouse.cursorItem.x + 3 + textWidth, mouse.cursorItem.y + 3, mouse.cursorAt[2]];
                         }
+
                         return;
                     } else if (pressedItem === "windowContent") {
                         var lockedItem = getLastItemIndex(activeItem);
@@ -1086,8 +1087,26 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
                             if (lastItem[0] === "contentInputField") {
                                 mouse.cursorItem = getItemInfoAtIndex(lastItem, activeItem, lockedItem);
                                 var text = mouse.cursorItem.data[1];
-                                var textWidth = dc.measureText(text).width;
-                                mouse.cursorAt = [mouse.cursorItem.x + 3 + textWidth, mouse.cursorItem.y + 3, text.length - 1];
+                                var textWidth = 0;
+                                var letterWidth = 0;
+
+                                var mouseX = mouse.x - (mouse.offsetX + mouse.cursorItem.x);
+                                var hasCursor = false;
+
+                                for (var letter = 0; letter < text.length; letter++) {
+                                    letterWidth = dc.measureText(text.slice(0, letter)).width;
+                                    if (mouseX <= letterWidth + 4) {
+                                        mouse.cursorAt = [mouse.cursorItem.x + letterWidth + 3, mouse.cursorItem.y + 3, letter - 1];
+                                        hasCursor = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!hasCursor) {
+                                    textWidth = dc.measureText(text).width;
+                                    mouse.cursorAt = [mouse.cursorItem.x + 3 + textWidth, mouse.cursorItem.y + 3, text.length - 1];
+                                }
+
                                 document.addEventListener("keydown", handleInputFieldInput);
                             }
 
@@ -1195,9 +1214,7 @@ function canTop(canvasItem, designName, width, height, gridX, gridY, useCustomMo
     function activateMovement(evt) {
         evt.preventDefault();
         mouse.realiseMovement = true;
-        if (evt.type === "mousedown") {
-            doClick();
-        }
+        doClick();
     }
 
     function deactivateMovement(evt) {
