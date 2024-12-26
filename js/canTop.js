@@ -24,6 +24,7 @@ function lg (msg) {
 function getDesign (designName, width, heigth, gridX, gridY) {
   const design = {};
   design.imageMap = new Image();
+  design.bg = new Image();
 
   // Variables for helper functions
   let cords = 0;
@@ -71,7 +72,9 @@ function getDesign (designName, width, heigth, gridX, gridY) {
     default:
       // Background design - type img/draw, draw solid/gradient_tb/gradient_lr,
       // sizeX, sizeY, colors
+      // design.background = ['draw', 'solid', width, heigth, ['#3a0700', '#000', '#001100', '#003300', '#000']];
       design.background = ['draw', 'solid', width, heigth, ['#3a0700', '#000', '#001100', '#003300', '#000']];
+      design.bg.src = './img/bg.webp';
 
       // Mouse design
       design.defaultMouse = ['#fff', '#000', 'round', 'line', [0, 0, 1, 0, 12, 10, 12, 15, 5, 15]];
@@ -85,7 +88,7 @@ function getDesign (designName, width, heigth, gridX, gridY) {
 
       // Window prototype
       design.windowTitleBar = ['static', 'x', ['#fff', '#aeaeae'], ['rect'], ['gradient_bt'], [['#4a0000', '#1a0000', '#000']], [[0, 0, 100, 17]]];
-      design.windowContent = ['static', 'both', ['#fff', '#aeaeae'], ['rect'], ['solid'], [['#2a0000']], [[0, 17, 100, 150]]];
+      design.windowContent = ['static', 'both', ['#fff', '#aeaeae'], ['rect'], ['solid'], [['rgba(112, 0, 0,0.85)']], [[0, 17, 100, 150]]];
       design.windowStatusBar = ['static', 'x', ['#fff', '#aeaeae'], ['rect'], ['solid'], [['#4a0000']], [[0, 167, 100, 17]]];
 
       // Window controls
@@ -717,6 +720,7 @@ function canTop (canvasItem, designName, width, height, gridX, gridY, useCustomM
         }
 
         dc.fillRect(0, 0, width, height);
+        dc.drawImage(design.bg, 0, 0);
     }
   }
 
@@ -2082,12 +2086,15 @@ function canTop (canvasItem, designName, width, height, gridX, gridY, useCustomM
   }
 
   // Image loader check to see if a image has been completely loaded
+  /*
   function checkLoaded () {
     if (design.imageMap.src === '' || (design.imageMap.width !== 0 && design.imageMap.height !== 0 && design.imageMap.complete === true)) {
       clearInterval(loaderCheckInterval);
       initialized();
     }
   }
+  */
+  // var loaderCheckInterval = setInterval(checkLoaded, 120);
 
-  var loaderCheckInterval = setInterval(checkLoaded, 120);
+  initialized();
 }
