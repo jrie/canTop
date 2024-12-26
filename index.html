@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <title>CanTop Version 1.0</title>
         <meta charset="utf-8" />
@@ -7,17 +7,12 @@
     </head>
 
     <body>
-        <div id="mainContainer">
-            <canvas id="canTopCanvas" width="320" height="240">
-                Your browser does not support the canvas item, get a version of <a href="http://mozilla.org/firefox">Firefox</a>
-                or <a href="http://chrome.google.com">Google Chrome</a> which do support canvas.
-            </canvas>
-        </div>
+        <canvas id="canTopCanvas"></canvas>
 
         <script type="text/javascript" src="js/canTop.js"></script>
         <script type="text/javascript">
             // canTop (CanvasItem, Design, width, height, gridSpacingX, gridSpacingY, useCustomMouse, snapToEdges, useDebug)
-            canTop("canTopCanvas", "template", 1024, 600, 10, 10, true, true, false);
+            canTop("canTopCanvas", "template", window.innerWidth, window.innerHeight - 3, 2, 2, true, true, false);
         </script>
     </body>
 </html>
