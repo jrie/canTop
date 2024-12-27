@@ -8,10 +8,6 @@ canTopData.activeWindow = null;
 canTopData.mouseTraps = [];
 canTopData.lastId = 0;
 
-// This functions later will be moved into the main function and are not global
-const canvas = document.getElementById('canTopCanvas');
-const dc = canvas.getContext('2d');
-
 const hasConsole = !!window.console;
 function lg (msg) {
   if (hasConsole) {
@@ -28,10 +24,6 @@ function getDesign (designName, useBackground, width, heigth, gridX, gridY) {
     design.bg = new window.Image();
   }
 
-  // Variables for helper functions
-  let cords = 0;
-  let cordSize = 0;
-
   // Incooperate font measuring and evaluation
   /*
   dc.font = dcFont;
@@ -41,8 +33,8 @@ function getDesign (designName, useBackground, width, heigth, gridX, gridY) {
   */
 
   function pushBoundaries (item, styleOffset, coordOffset) {
-    cordSize = item[coordOffset].length;
-
+    const cordSize = item[coordOffset].length;
+    let cords = 0;
     let minX = 0;
     let maxX = 0;
     let minY = 0;
@@ -310,7 +302,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
     // itemDesign, parent, positioningOn, fill-axis, scrollAble, action, datafield, datatype, initialValue, datastep
     windowItem.contentItems = [['contentScrollbarY', -1, 'x', 'fillY', false, false, false], ['contentScrollbarPlugY', 0, 'both', false, 'scrollY', false], ['contentScrollbarX', -1, 'y', 'fillX', false, false, false], ['contentScrollbarPlugX', 2, 'both', false, 'scrollX', false]];
-
+    console.log('windowItem', windowItem);
     windowItem.contentBoundaries = [];
     windowItem.contentData = [];
     windowItem.contentActions = [];
@@ -433,8 +425,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
     canTopData.renderQueueSize++;
   }
 
-  // let canvas = document.getElementById(canvasItem);
-  // let dc = canvas.getContext("2d");
+  const canvas = document.getElementById(canvasItem);
+  const dc = canvas.getContext('2d');
   const design = getDesign(designName, useBackground, width, height, gridX, gridY);
   canvas.width = width;
   canvas.height = height;
@@ -948,19 +940,18 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
           const linePoints = drawingCoords[drawingIndex];
           const drawingSteps = linePoints.length;
-          let cord = 0;
           // Phantom drawing
           switch (drawingDesign[3][0]) {
             case 'line':
               if (drawingDesign[0] === 'static') {
-                for (cord = 0; cord < drawingSteps; cord += 2) {
+                for (let cord = 0; cord < drawingSteps; cord += 2) {
                   dc.lineTo(activeItem.x + linePoints[cord], activeItem.y + linePoints[cord + 1]);
                 }
 
-                dc.lineTo(activeItem.x + linePoints[cord][0], activeItem.y + linePoints[cord][1]);
+                dc.lineTo(activeItem.x + linePoints[0], activeItem.y + linePoints[1]);
               } else {
                 dc.moveTo(activeItem.x + posX + linePoints[0], activeItem.x + posY + linePoints[1]);
-                for (cord = 0; cord < drawingSteps; cord += 2) {
+                for (let cord = 0; cord < drawingSteps; cord += 2) {
                   dc.lineTo(activeItem.x + posX + linePoints[cord], activeItem.y + posY + linePoints[cord + 1]);
                 }
               }
@@ -1868,12 +1859,14 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
     if (windowItem.mode === 'data') {
       offsetX = contentArea[0] + 3 + contentArea[4][0];
       offsetY = contentArea[1] + 12 + contentArea[4][1];
+      const mouseY = mouse.y - (mouse.offsetY + 6);
       // Clip the drawable area by the dimensions of the content area
       let measurementItem = [];
       let calculatedWidth = 0;
       let hasDrawnSelection = false;
 
       windowItem.contentWidth = 0;
+
       for (let item = 0; item < items.length; item++) {
         currentItem = items[item];
 
@@ -1886,9 +1879,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
           }
 
           if (!hasDrawnSelection && windowItem.id === canTopData.activeWindow && (mouse.x - mouse.offsetX) > contentArea[0] && (mouse.x - mouse.offsetX) < (contentArea[0] + contentArea[2])) {
-            const mouseY = mouse.y - (mouse.offsetY + 6);
-            if (offsetY >= mouseY + contentArea[5][1]) {
-              dc.fillStyle = 'rgba(0,0,0, 0.75)';
+            if (mouseY > contentArea[1] && offsetY >= mouseY + contentArea[5][1]) {
+              dc.fillStyle = 'rgba(0,0,0, 0.6)';
               dc.fillRect(contentArea[0], offsetY - (contentArea[5][1] + 12), contentArea[2], 18);
               hasDrawnSelection = true;
             }
@@ -2046,7 +2038,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             continue;
           }
 
-          if (mX >= parentWindow.contentArea[0] && mX <= (parentWindow.contentArea[0] + parentWindow.contentArea[4][2]) && mY >= parentWindow.contentArea[1] && mY <= (parentWindow.contentArea[1] + parentWindow.contentArea[4][3])) {
+          if (mX >= parentWindow.contentArea[0] && mX <= (parentWindow.contentArea[0] + parentWindow.contentArea[4][2]) && mY >= parentWindow.contentArea[1] && mY <= parentWindow.contentArea[1] + parentWindow.contentArea[4][3]) {
             dc.beginPath();
             dc.rect(trap[2] - parentWindow.contentArea[5][0], trap[3] - parentWindow.contentArea[5][1], trap[4], trap[5]);
             dc.closePath();
