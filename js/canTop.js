@@ -21,18 +21,16 @@ function lg (msg) {
 
 // Start of main functions
 
-function getDesign (designName, width, heigth, gridX, gridY) {
+function getDesign (designName, useBackground, width, heigth, gridX, gridY) {
   const design = {};
   design.imageMap = new window.Image();
-  design.bg = new window.Image();
+  if (useBackground) {
+    design.bg = new window.Image();
+  }
 
   // Variables for helper functions
   let cords = 0;
   let cordSize = 0;
-  let minY = -1;
-  let minX = -1;
-  let maxX = -1;
-  let maxY = -1;
 
   // Incooperate font measuring and evaluation
   /*
@@ -44,31 +42,30 @@ function getDesign (designName, width, heigth, gridX, gridY) {
 
   function pushBoundaries (item, styleOffset, coordOffset) {
     cordSize = item[coordOffset].length;
+
+    let minX = 0;
+    let maxX = 0;
+    let minY = 0;
+    let maxY = 0;
+
     for (let index = 0; index < cordSize; index++) {
-      if (item[styleOffset][index] === 'line') {
-        if (minX < item[coordOffset][index][0]) {
-          minX = item[coordOffset][index][0];
-        }
+      switch (item[styleOffset][index]) {
+        case 'line':
+          minX = minX < item[coordOffset][index][0] ? item[coordOffset][index][0] : 0;
+          minY = minY < item[coordOffset][index][1] ? item[coordOffset][index][1] : 0;
 
-        if (minY < item[coordOffset][index][1]) {
-          minY = item[coordOffset][index][1];
-        }
-
-        cords = item[coordOffset][index].length;
-        for (let cord = 0; cord < cords; cord += 2) {
-          if (item[coordOffset][index][cord] > minX) {
-            maxX = item[coordOffset][index][cord];
+          cords = item[coordOffset][index].length;
+          for (let cord = 0; cord < cords; cord += 2) {
+            maxX = item[coordOffset][index][cord] > minX ? item[coordOffset][index][cord] > minX : maxX;
+            maxY = item[coordOffset][index][cord] > minY ? item[coordOffset][index][cord] > minY : maxY;
           }
 
-          if (item[coordOffset][index][cord + 1] > minY) {
-            maxY = item[coordOffset][index][cord + 1];
-          }
-        }
-      } else if (item[styleOffset][index] === 'rect') {
-        minX = 0;
-        minY = 0;
-        maxX = item[coordOffset][index][2];
-        maxY = item[coordOffset][index][3];
+          break;
+        case 'rect':
+        default:
+          maxX = item[coordOffset][index][2];
+          maxY = item[coordOffset][index][3];
+          break;
       }
     }
 
@@ -80,7 +77,10 @@ function getDesign (designName, width, heigth, gridX, gridY) {
     default:
       // Background design - type img/draw, draw solid/gradient_tb/gradient_lr, sizeX, sizeY, colors
       design.background = ['draw', 'solid', width, heigth, ['#3a0700', '#000', '#001100', '#003300', '#000']];
-      design.bg.src = './img/bg.webp';
+
+      if (useBackground) {
+        design.bg.src = './img/bg.webp';
+      }
 
       // Mouse design
       design.defaultMouse = ['#fff', '#000', 'round', 'line', [0, 0, 1, 0, 12, 10, 12, 15, 5, 15]];
@@ -135,7 +135,7 @@ function getDesign (designName, width, heigth, gridX, gridY) {
   return design;
 }
 
-function canTop (canvasItem, designName, width, height, gridX, gridY, useCustomMouse, snapToEdges, useDebug) {
+function canTop (canvasItem, designName, useBackground, width, height, gridX, gridY, useCustomMouse, snapToEdges, useDebug) {
   window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.oRequestAnimationFrame;
 
   function drawQueueItem (queueIndex) {
@@ -435,7 +435,7 @@ function canTop (canvasItem, designName, width, height, gridX, gridY, useCustomM
 
   // let canvas = document.getElementById(canvasItem);
   // let dc = canvas.getContext("2d");
-  const design = getDesign(designName, width, height, gridX, gridY);
+  const design = getDesign(designName, useBackground, width, height, gridX, gridY);
   canvas.width = width;
   canvas.height = height;
 
@@ -581,22 +581,16 @@ function canTop (canvasItem, designName, width, height, gridX, gridY, useCustomM
     let posY = drawingDesign[2][1];
     switch (drawingDesign[0]) {
       case 'dynamic':
-        if (drawingDesign[1] === 'x') {
-          if (drawingDesign[2][0] < 0) {
-            posX = item.width + drawingDesign[2][0];
-          }
-        } else if (drawingDesign[1] === 'y') {
-          if (drawingDesign[2][1] < 0) {
-            posY = item.height + drawingDesign[2][1];
-          }
-        } else if (drawingDesign[1] === 'both') {
-          if (drawingDesign[2][0] < 0) {
-            posX = item.width + drawingDesign[2][0];
-          }
-
-          if (drawingDesign[2][1] < 0) {
-            posY = item.height + drawingDesign[2][1];
-          }
+        switch (drawingDesign[1]) {
+          case 'x':
+            posX = posX < 0 ? item.width + drawingDesign[2][0] : posX;
+            break;
+          case 'y':
+            posY = posY < 0 ? item.height + drawingDesign[2][1] : posY;
+            break;
+          case 'both':
+            posX = posX < 0 ? item.width + drawingDesign[2][0] : posX;
+            posY = posY < 0 ? item.height + drawingDesign[2][1] : posY;
         }
         break;
       default:
@@ -724,7 +718,7 @@ function canTop (canvasItem, designName, width, height, gridX, gridY, useCustomM
 
         dc.fillRect(0, 0, width, height);
 
-        if (design.bg && design.bg.complete) {
+        if (useBackground && design.bg && design.bg.complete) {
           dc.drawImage(design.bg, 0, 0);
         }
     }
