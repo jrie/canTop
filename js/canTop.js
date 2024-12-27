@@ -177,22 +177,21 @@ function canTop (canvasItem, designName, width, height, gridX, gridY, useCustomM
         posY = dynamicCoords[1];
 
         // Actual drawing
-        const linePoints = [drawingIndex];
+        const linePoints = drawingCoords[drawingIndex];
         const drawingSteps = linePoints.length;
-        let cord = 0;
 
         switch (drawingDesign[3][drawingIndex]) {
           case 'line':
             dc.beginPath();
 
             if (drawingDesign[0] === 'static') {
-              for (cord = 0; cord < drawingSteps; cord += 2) {
+              for (let cord = 0; cord < drawingSteps; cord += 2) {
                 dc.lineTo(item.x + linePoints[cord], item.y + linePoints[cord + 1]);
               }
               dc.lineTo(item.x + linePoints[cord][0], item.y + linePoints[cord][1]);
             } else {
               if (linePoints.length > 4) {
-                for (cord = 0; cord < drawingSteps; cord += 2) {
+                for (let cord = 0; cord < drawingSteps; cord += 2) {
                   dc.lineTo(item.x + posX + linePoints[cord], item.y + posY + linePoints[cord + 1]);
                 }
               } else {
@@ -573,41 +572,32 @@ function canTop (canvasItem, designName, width, height, gridX, gridY, useCustomM
 
   // Get positioning if it applies
   function getDynamicOffset (drawingDesign, item) {
-    let posX = 0;
-    let posY = 0;
-    if (drawingDesign[0] === 'dynamic') {
-      if (drawingDesign[1] === 'x') {
-        if (drawingDesign[2][0] < 0) {
-          posX = item.width + drawingDesign[2][0];
-        } else {
-          posX = drawingDesign[2][0];
-        }
+    let posX = drawingDesign[2][0];
+    let posY = drawingDesign[2][1];
+    switch (drawingDesign[0]) {
+      case 'dynamic':
+        if (drawingDesign[1] === 'x') {
+          if (drawingDesign[2][0] < 0) {
+            posX = item.width + drawingDesign[2][0];
+          }
+        } else if (drawingDesign[1] === 'y') {
+          if (drawingDesign[2][1] < 0) {
+            posY = item.height + drawingDesign[2][1];
+          }
+        } else if (drawingDesign[1] === 'both') {
+          if (drawingDesign[2][0] < 0) {
+            posX = item.width + drawingDesign[2][0];
+          }
 
-        posY = drawingDesign[2][1];
-      } else if (drawingDesign[1] === 'y') {
-        posX = (drawingDesign[2][0]);
-
-        if (drawingDesign[2][1] < 0) {
-          posY = item.height + drawingDesign[2][1];
-        } else {
-          posY = drawingDesign[2][1];
+          if (drawingDesign[2][1] < 0) {
+            posY = item.height + drawingDesign[2][1];
+          }
         }
-      } else if (drawingDesign[1] === 'both') {
-        if (drawingDesign[2][0] < 0) {
-          posX = item.width + drawingDesign[2][0];
-        } else {
-          posX = drawingDesign[2][0];
-        }
-
-        if (drawingDesign[2][1] < 0) {
-          posY = item.height + drawingDesign[2][1];
-        } else {
-          posY = drawingDesign[2][1];
-        }
-      } else {
+        break;
+      default:
         posX = 0;
         posY = 0;
-      }
+        break;
     }
 
     return [posX, posY];
@@ -615,12 +605,9 @@ function canTop (canvasItem, designName, width, height, gridX, gridY, useCustomM
 
   // Get window by id
   function getWindowById (id) {
-    let item = canTopData.renderQueueSize;
-    while (item--) {
-      if (canTopData.renderQueue[item].type === 'window') {
-        if (canTopData.renderQueue[item].id === id) {
-          return canTopData.renderQueue[item];
-        }
+    for (const item of canTopData.renderQueueSize) {
+      if (item.type === 'window' && item.id === id) {
+        return item;
       }
     }
   }
