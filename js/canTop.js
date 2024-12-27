@@ -179,19 +179,20 @@ function canTop (canvasItem, designName, width, height, gridX, gridY, useCustomM
         // Actual drawing
         const linePoints = drawingCoords[drawingIndex];
         const drawingSteps = linePoints.length;
+        let cord = 0;
 
         switch (drawingDesign[3][drawingIndex]) {
           case 'line':
             dc.beginPath();
 
             if (drawingDesign[0] === 'static') {
-              for (let cord = 0; cord < drawingSteps; cord += 2) {
+              for (cord = 0; cord < drawingSteps; cord += 2) {
                 dc.lineTo(item.x + linePoints[cord], item.y + linePoints[cord + 1]);
               }
               dc.lineTo(item.x + linePoints[cord][0], item.y + linePoints[cord][1]);
             } else {
               if (linePoints.length > 4) {
-                for (let cord = 0; cord < drawingSteps; cord += 2) {
+                for (cord = 0; cord < drawingSteps; cord += 2) {
                   dc.lineTo(item.x + posX + linePoints[cord], item.y + posY + linePoints[cord + 1]);
                 }
               } else {
@@ -492,11 +493,15 @@ function canTop (canvasItem, designName, width, height, gridX, gridY, useCustomM
     switch (direction) {
       case 'lr':
         colors = getArrayCopy(colors).reverse();
+        background = dc.createLinearGradient(x, y, x + width, y);
+        break;
       case 'rl':
         background = dc.createLinearGradient(x, y, x + width, y);
         break;
       case 'tb':
         colors = getArrayCopy(colors).reverse();
+        background = dc.createLinearGradient(x, y, x, y + height);
+        break;
       case 'bt':
       default:
         background = dc.createLinearGradient(x, y, x, y + height);
