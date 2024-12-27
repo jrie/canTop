@@ -302,7 +302,6 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
     // itemDesign, parent, positioningOn, fill-axis, scrollAble, action, datafield, datatype, initialValue, datastep
     windowItem.contentItems = [['contentScrollbarY', -1, 'x', 'fillY', false, false, false], ['contentScrollbarPlugY', 0, 'both', false, 'scrollY', false], ['contentScrollbarX', -1, 'y', 'fillX', false, false, false], ['contentScrollbarPlugX', 2, 'both', false, 'scrollX', false]];
-    console.log('windowItem', windowItem);
     windowItem.contentBoundaries = [];
     windowItem.contentData = [];
     windowItem.contentActions = [];
@@ -1570,6 +1569,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
     const text = mouse.cursorItem.data[1];
     let cursorIndex = -1;
+    const cursorSelection = mouse.cursorItem.selection.sort();
+    console.log('evt.keyCode', evt.keyCode);
     switch (evt.keyCode) {
       case 35:
         // End key
@@ -1589,6 +1590,20 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
           mouse.cursorItem.selection[0] = 0;
         }
         return;
+      case 46:
+        // Delete key
+        evt.preventDefault();
+        cursorIndex = mouse.cursorAt[2];
+        if (mouse.cursorItem.selection && mouse.cursorItem.controlPressed) {
+          mouse.cursorItem.data[1] = mouse.cursorItem.data[1].substring(0, cursorSelection[0]) + mouse.cursorItem.data[1].substring(cursorSelection[1] + 1, text.length);
+          mouse.cursorAt[0] = mouse.cursorItem.x + dc.measureText(mouse.cursorItem.data[1].substring(0, cursorSelection[0])).width + 3;
+          mouse.cursorAt[2] = cursorSelection[0] - 1;
+          mouse.cursorItem.selection = [0, 0];
+          mouse.cursorItem.controlPressed = false;
+        } else if (cursorIndex < text.length - 1) {
+          mouse.cursorItem.data[1] = mouse.cursorItem.data[1].substring(0, cursorIndex + 1) + mouse.cursorItem.data[1].substring(cursorIndex + 2, text.length);
+        }
+        return;
       case 9:
         // Tabulator
         evt.preventDefault();
@@ -1605,12 +1620,6 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
         return;
       case 17:
         // Control/Strg key
-        return;
-      case 46:
-        cursorIndex = mouse.cursorAt[2];
-        if (cursorIndex < text.length - 1) {
-          mouse.cursorItem.data[1] = mouse.cursorItem.data[1].substring(0, cursorIndex + 1) + mouse.cursorItem.data[1].substring(cursorIndex + 2, text.length);
-        }
         return;
       case 8:
         // Backspace key
