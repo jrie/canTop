@@ -3,6 +3,8 @@ canTop
 
 canTop is a canvas desktop.
 
+Try it out here: https://jrie.github.io/canTop
+
 
 General information
 =======
