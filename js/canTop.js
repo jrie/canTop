@@ -105,11 +105,11 @@ function getDesign (designName, width, heigth, gridX, gridY) {
 
       // Window contents
       // Vertical scrollbar
-      design.contentScrollbarY = [['rect'], ['solid'], [['#555']], [[0, 0, 12, 100]], -12, 0];
+      design.contentScrollbarY = [['rect'], ['solid'], [['rgba(190, 190, 190, 0.4)']], [[0, 0, 12, 100]], -12, 0];
       design.contentScrollbarPlugY = [['rect'], ['solid'], [['#ddd']], [[0, 0, 6, 15]], 3, 3];
 
       // Horizontal scrollbar
-      design.contentScrollbarX = [['rect'], ['solid'], [['#555']], [[0, 0, 100, 14]], 0, -14];
+      design.contentScrollbarX = [['rect'], ['solid'], [['rgba(190,190,190,0.4)']], [[0, 0, 100, 14]], 0, -14];
       design.contentScrollbarPlugX = [['rect'], ['solid'], [['#ddd']], [[0, 0, 15, 6]], 3, 4];
 
       // Interactive elements
@@ -610,7 +610,7 @@ function canTop (canvasItem, designName, width, height, gridX, gridY, useCustomM
 
   // Get window by id
   function getWindowById (id) {
-    for (const item of canTopData.renderQueueSize) {
+    for (const item of canTopData.renderQueue) {
       if (item.type === 'window' && item.id === id) {
         return item;
       }
@@ -723,7 +723,10 @@ function canTop (canvasItem, designName, width, height, gridX, gridY, useCustomM
         }
 
         dc.fillRect(0, 0, width, height);
-        dc.drawImage(design.bg, 0, 0);
+
+        if (design.bg && design.bg.complete) {
+          dc.drawImage(design.bg, 0, 0);
+        }
     }
   }
 
