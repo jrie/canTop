@@ -5,6 +5,8 @@ canTop is a canvas desktop.
 
 Try it out here: https://jrie.github.io/canTop
 
+![canTop-preview](https://github.com/user-attachments/assets/bb2f7502-2688-404e-a081-eacd2b258442)
+
 
 General information
 =======
