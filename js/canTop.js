@@ -1283,8 +1283,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
             // Maximum positive scroll in Y
             const contentHeight = parentWindow.contentHeight + parentWindow.contentArea[4][1];
-            if (parentWindow.contentArea[5][1] <= (contentHeight - parentWindow.contentArea[4][3])) {
-              parentWindow.contentArea[5][1] = ((contentHeight - parentWindow.contentArea[4][3]) * scrollPercentage);
+            if (parentWindow.contentArea[5][1] <= contentHeight - parentWindow.contentArea[4][3]) {
+              parentWindow.contentArea[5][1] = (contentHeight - parentWindow.contentArea[4][3]) * scrollPercentage;
             } else if (parentWindow.contentArea[4][3] < contentHeight) {
               parentWindow.contentArea[5][1] = contentHeight - parentWindow.contentArea[4][3];
             } else {
@@ -1324,8 +1324,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
             // Maximum positive scroll in X and scolling
             const contentWidth = parentWindow.contentWidth + parentWindow.contentArea[4][0];
-            if (parentWindow.contentArea[5][0] <= (contentWidth - parentWindow.contentArea[4][2])) {
-              parentWindow.contentArea[5][0] = ((contentWidth - parentWindow.contentArea[4][2]) * scrollPercentage);
+            if (parentWindow.contentArea[5][0] <= contentWidth - parentWindow.contentArea[4][2]) {
+              parentWindow.contentArea[5][0] = (contentWidth - parentWindow.contentArea[4][2]) * scrollPercentage;
             } else if (parentWindow.contentArea[4][2] < contentWidth) {
               parentWindow.contentArea[5][0] = contentWidth - parentWindow.contentArea[4][2];
             } else {
