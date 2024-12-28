@@ -1360,10 +1360,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
     }
 
     if (mouse.activeItem !== null) {
-      const moveX = mouse.previousX - mouse.x;
-      const moveY = mouse.previousY - mouse.y;
-      let width = mouse.activeItem.width - moveX;
-      let height = mouse.activeItem.height - moveY;
+      let width = mouse.activeItem.width - (mouse.previousX - mouse.x);
+      let height = mouse.activeItem.height - (mouse.previousY - mouse.y);
 
       if (width < 250) {
         width = mouse.activeItem.width;
@@ -1391,49 +1389,47 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
   // Interactions
   function resizeWindowItem (activeItem, newWidth, newHeight) {
-    let drawData = [];
-    const drawItems = activeItem.drawData.length;
-    let drawDesign = [];
-    let drawIndexes = 0;
-    let usedPixels = 0;
-    let index = 0;
-    const hotSpotOffsetY = activeItem.hotSpotOffsetY;
-    const offsetsY = activeItem.hotSpotOffsetY.length;
     activeItem.width = newWidth;
     activeItem.height = newHeight;
 
-    for (index = 0; index < drawItems; index++) {
-      drawData = activeItem.drawData[index];
+    let index = 0;
+    for (const drawData of activeItem.drawData) {
+      const drawDesign = design[drawData[0]];
+      let drawIndexes = drawDesign[3].length;
+      let usedPixels = newHeight;
 
-      drawDesign = design[drawData[0]];
-      drawIndexes = drawDesign[3].length;
-
-      usedPixels = newHeight;
-      for (let subIndex = 0; subIndex < offsetsY; subIndex++) {
+      for (let subIndex = 0; subIndex < activeItem.hotSpotOffsetY.length; subIndex++) {
         if (index !== subIndex) {
-          usedPixels -= hotSpotOffsetY[subIndex];
+          usedPixels -= activeItem.hotSpotOffsetY[subIndex];
         } else {
           break;
         }
       }
 
       if (drawDesign[0] === 'static') {
-        if (drawDesign[1] === 'both') {
-          while (drawIndexes--) {
-            if (drawDesign[3][drawIndexes] === 'rect') {
-              drawData[1][0][3] = usedPixels;
-              drawData[2][3] = usedPixels;
-              hotSpotOffsetY[index] = usedPixels;
+        switch (drawDesign[1]) {
+          case 'both':
+            while (drawIndexes--) {
+              if (drawDesign[3][drawIndexes] === 'rect') {
+                drawData[1][0][3] = usedPixels;
+                drawData[2][3] = usedPixels;
+                activeItem.hotSpotOffsetY[index] = usedPixels;
+              }
             }
-          }
-        } else if (drawDesign[1] === 'x') {
-          if (index > 1) {
-            usedPixels += drawData[1][0][3];
-          }
-          drawData[1][0][1] = newHeight - usedPixels;
-          drawData[2][1] = usedPixels;
+            break;
+          case 'x':
+            if (index > 1) {
+              usedPixels += drawData[1][0][3];
+            }
+            drawData[1][0][1] = newHeight - usedPixels;
+            drawData[2][1] = usedPixels;
+            break;
+          default:
+            break;
         }
       }
+
+      ++index;
     }
 
     // Update the dimensions of the contentArea for content drawing
