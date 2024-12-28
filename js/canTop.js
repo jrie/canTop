@@ -462,13 +462,11 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
   const gridEnd = [canvas.width, canvas.height];
 
   // Helper function to generate gradients
-  let background;
-  let stepSize = 0.0;
-  let current = 1.0;
-
   function createGradient (direction, x, y, width, height, colors) {
-    stepSize = (1.0 / (colors.length - 1)).toPrecision(2);
-    current = 1.0;
+    const stepSize = (1.0 / (colors.length - 1)).toPrecision(2);
+    let current = 1.0;
+    let background = null;
+
     switch (direction) {
       case 'lr':
         colors = getArrayCopy(colors).reverse();
@@ -1267,8 +1265,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             const itemHeight = parentWindow.contentBoundaries[mouse.activeItem.itemIndex][3];
             const scrollHeight = parentWindow.contentArea[4][3] - (itemBaseY + itemHeight);
 
-            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] -= (mouse.previousY - mouse.y);
-            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][5] -= (mouse.previousY - mouse.y);
+            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] -= mouse.previousY - mouse.y;
+            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][5] -= mouse.previousY - mouse.y;
             let scrollPercentage = 0;
 
             if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] <= itemBaseY) {
@@ -1308,8 +1306,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
               itemBaseX = design[mouse.activeItem.type][4];
             }
 
-            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] -= (mouse.previousX - mouse.x);
-            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][4] -= (mouse.previousX - mouse.x);
+            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] -= mouse.previousX - mouse.x;
+            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][4] -= mouse.previousX - mouse.x;
             let scrollPercentage = 0;
 
             if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] <= itemBaseX) {
@@ -1339,10 +1337,10 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
       if (mouse.cursorItem !== null) {
         if (mouse.activeItem.id === mouse.cursorItem.parentWindow) {
-          mouse.cursorAt[0] -= (mouse.previousX - mouse.x);
-          mouse.cursorAt[1] -= (mouse.previousY - mouse.y);
-          mouse.cursorItem.x -= (mouse.previousX - mouse.x);
-          mouse.cursorItem.y -= (mouse.previousY - mouse.y);
+          mouse.cursorAt[0] -= mouse.previousX - mouse.x;
+          mouse.cursorAt[1] -= mouse.previousY - mouse.y;
+          mouse.cursorItem.x -= mouse.previousX - mouse.x;
+          mouse.cursorItem.y -= mouse.previousY - mouse.y;
         }
       }
 
