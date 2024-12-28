@@ -793,6 +793,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       return;
     }
 
+    evt.preventDefault();
+
     const cantopWindow = getWindowById(canTopData.activeWindow);
 
     if (mouse.shiftPressed && cantopWindow.contentWidth > cantopWindow.contentArea[4][2]) {
