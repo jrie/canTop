@@ -8,13 +8,6 @@ canTopData.activeWindow = null;
 canTopData.mouseTraps = [];
 canTopData.lastId = 0;
 
-const hasConsole = !!window.console;
-function lg (msg) {
-  if (hasConsole) {
-    window.console.log(msg);
-  }
-}
-
 // Start of main functions
 
 function getDesign (designName, useBackground, width, heigth, gridX, gridY) {
@@ -97,12 +90,12 @@ function getDesign (designName, useBackground, width, heigth, gridX, gridY) {
 
       // Window contents
       // Vertical scrollbar
-      design.contentScrollbarY = [['rect'], ['solid'], [['rgba(190, 190, 190, 0.4)']], [[0, 0, 12, 100]], -12, 0];
-      design.contentScrollbarPlugY = [['rect'], ['solid'], [['#ddd']], [[0, 0, 6, 15]], 3, 3];
+      design.windowScrollbarY = [['rect'], ['solid'], [['rgba(190, 190, 190, 0.4)']], [[0, 0, 12, 100]], -12, 0];
+      design.windowScrollbarPlugY = [['rect'], ['solid'], [['#ddd']], [[0, 0, 6, 15]], 3, 3];
 
       // Horizontal scrollbar
-      design.contentScrollbarX = [['rect'], ['solid'], [['rgba(190,190,190,0.4)']], [[0, 0, 100, 14]], 0, -14];
-      design.contentScrollbarPlugX = [['rect'], ['solid'], [['#ddd']], [[0, 0, 15, 6]], 3, 4];
+      design.windowScrollbarX = [['rect'], ['solid'], [['rgba(190,190,190,0.4)']], [[0, 0, 100, 14]], 0, -14];
+      design.windowScrollbarPlugX = [['rect'], ['solid'], [['#ddd']], [[0, 0, 15, 6]], 3, 4];
 
       // Interactive elements
       design.textCursor = ['#fff', 1];
@@ -116,11 +109,11 @@ function getDesign (designName, useBackground, width, heigth, gridX, gridY) {
   pushBoundaries(design.windowContent, 3, 6);
   pushBoundaries(design.windowStatusBar, 3, 6);
 
-  pushBoundaries(design.contentScrollbarX, 0, 3);
-  pushBoundaries(design.contentScrollbarPlugX, 0, 3);
+  pushBoundaries(design.windowScrollbarX, 0, 3);
+  pushBoundaries(design.windowScrollbarPlugX, 0, 3);
 
-  pushBoundaries(design.contentScrollbarY, 0, 3);
-  pushBoundaries(design.contentScrollbarPlugY, 0, 3);
+  pushBoundaries(design.windowScrollbarY, 0, 3);
+  pushBoundaries(design.windowScrollbarPlugY, 0, 3);
 
   pushBoundaries(design.contentInputField, 0, 3);
 
@@ -301,7 +294,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
     windowItem.contentArea = [windowItem.x, windowItem.y + windowItem.hotSpotOffsetY[0], windowItem.width, windowItem.drawData[1][2][3]];
 
     // itemDesign, parent, positioningOn, fill-axis, scrollAble, action, datafield, datatype, initialValue, datastep
-    windowItem.contentItems = [['contentScrollbarY', -1, 'x', 'fillY', false, false, false], ['contentScrollbarPlugY', 0, 'both', false, 'scrollY', false], ['contentScrollbarX', -1, 'y', 'fillX', false, false, false], ['contentScrollbarPlugX', 2, 'both', false, 'scrollX', false]];
+    windowItem.contentItems = [['windowScrollbarY', -1, 'x', 'fillY', false, false, false], ['windowScrollbarPlugY', 0, 'both', false, 'scrollY', false], ['windowScrollbarX', -1, 'y', 'fillX', false, false, false], ['windowScrollbarPlugX', 2, 'both', false, 'scrollX', false]];
     windowItem.contentBoundaries = [];
     windowItem.contentData = [];
     windowItem.contentActions = [];
@@ -436,6 +429,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
   mouse.y = 0;
   mouse.previousX = 0;
   mouse.previousY = 0;
+  mouse.controlPressed = false;
+  mouse.shiftPressed = false;
 
   if (useCustomMouse) {
     canvas.style.cursor = 'none';
@@ -667,6 +662,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
     item.parentWindow = activeItem.id;
     item.selection = [0, 0];
     item.controlPressed = false;
+    item.shiftPressed = false;
 
     for (let index = 0; index < activeItem.contentData.length; index++) {
       if (activeItem.contentData[index][0] === itemIndex) {
@@ -805,7 +801,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       let verticalScrollbarIndex = -1;
       for (let index = 0; index < window.contentItems.length; index++) {
         // Select a scrollbar plug for animation which parent item parentIndex is -1 (the main window)
-        if (window.contentItems[index][0] === 'contentScrollbarPlugY') {
+        if (window.contentItems[index][0] === 'windowScrollbarPlugY') {
           if (window.contentItems[window.contentItems[index][1]][1] === -1) {
             verticalScrollbarIndex = index;
             break;
@@ -827,7 +823,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
           scrollProgress = window.contentArea[5][1] / (window.contentHeight - window.contentArea[4][3]);
         }
 
-        const itemBaseY = design.contentScrollbarPlugY[5];
+        const itemBaseY = design.windowScrollbarPlugY[5];
         const itemHeight = window.contentBoundaries[verticalScrollbarIndex][3];
         const scrollHeight = window.contentArea[4][3] - (itemBaseY + itemHeight);
 
@@ -990,9 +986,9 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
         clearInterval(mouse.clickInternval);
         mouse.clickInternval = null;
         // Double click counted
-        lg('in two mouseclicks');
+        console.log('in two mouseclicks');
         if (mouse.activeItem) {
-          lg('Pressed item: ' + activeItem.title + ' / ' + pressedItem);
+          console.log('Pressed item: ' + activeItem.title + ' / ' + pressedItem);
         }
 
         mouse.clickCount = 0;
@@ -1000,8 +996,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       } else {
         if (mouse.clickCount === 1) {
           // Single mouse click
-          lg('in one mouseclick');
-          lg('Pressed item: ' + activeItem.title + ' / ' + pressedItem);
+          console.log('in one mouseclick');
+          console.log('Pressed item: ' + activeItem.title + ' / ' + pressedItem);
 
           if (pressedItem === 'windowMaximize') {
             let newWidth = 0;
@@ -1049,7 +1045,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             if (lockedItem !== null) {
               const lastItem = activeItem.contentItems[lockedItem];
               document.removeEventListener('keydown', handleInputFieldInput);
-              lg('Pressed content item: ' + activeItem.title + ' / ' + lastItem[0]);
+              console.log('Pressed content item: ' + activeItem.title + ' / ' + lastItem[0]);
 
               if (lastItem[0] === 'contentInputField') {
                 mouse.cursorItem = getItemInfoAtIndex(lastItem, activeItem, lockedItem);
@@ -1095,11 +1091,11 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
             if (lockedItem !== null) {
               const lastItem = activeItem.contentItems[lockedItem];
-              lg('Pressed item: ' + activeItem.title + ' / ' + lastItem[0]);
+              console.log('Pressed item: ' + activeItem.title + ' / ' + lastItem[0]);
 
               switch (lastItem[0]) {
-                case 'contentScrollbarPlugY':
-                case 'contentScrollbarPlugX':
+                case 'windowScrollbarPlugY':
+                case 'windowScrollbarPlugX':
                   mouse.previousX = mouse.x;
                   mouse.previousY = mouse.y;
                   mouse.moveInterval = setInterval(realiseMouseMovement, mouse.movementSpeed);
@@ -1228,7 +1224,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
           }
 
           break;
-        case 'contentScrollbarPlugY':
+        case 'windowScrollbarPlugY':
           if (mouse.activeItem.action === 'scrollY') {
             const parentWindow = getWindowById(mouse.activeItem.parentWindow);
             const itemBaseY = design[mouse.activeItem.type][5];
@@ -1262,7 +1258,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             }
           }
           break;
-        case 'contentScrollbarPlugX':
+        case 'windowScrollbarPlugX':
           if (mouse.activeItem.action === 'scrollX') {
             const parentWindow = getWindowById(mouse.activeItem.parentWindow);
             let itemBaseX = design[mouse.activeItem.type][4] + design[mouse.activeItem.type][6][2];
@@ -1548,8 +1544,39 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       if (mouse.cursorItem.type !== 'contentInputArea') {
         const parentWindow = getWindowById(mouse.cursorItem.parentWindow);
         const contentItems = parentWindow.contentItems;
+        // console.log('parentWindow.contentItems', parentWindow.contentItems);
 
-        let index = mouse.cursorItem.itemIndex === contentItems.length - 1 ? 0 : mouse.cursorItem.itemIndex + 1;
+        let index = 0;
+        if (mouse.shiftPressed) {
+          --mouse.cursorItem.itemIndex;
+        } else {
+          ++mouse.cursorItem.itemIndex;
+        }
+
+        let minIndex = -1;
+        let maxIndex = -1;
+        for (let targetIndex = 0; targetIndex < parentWindow.contentItems.length; ++targetIndex) {
+          const item = parentWindow.contentItems[targetIndex];
+          if (item[0].startsWith('window')) {
+            continue;
+          }
+          if (minIndex === -1) {
+            minIndex = targetIndex;
+            maxIndex = targetIndex;
+          }
+
+          if (maxIndex < targetIndex) {
+            maxIndex = targetIndex;
+          }
+        }
+
+        if (mouse.cursorItem.itemIndex < minIndex) {
+          mouse.cursorItem.itemIndex = maxIndex;
+        } else if (mouse.cursorItem.itemIndex > maxIndex) {
+          mouse.cursorItem.itemIndex = minIndex;
+        }
+
+        index = mouse.cursorItem.itemIndex;
 
         for (index; index < contentItems.length; index++) {
           if (contentItems[index][0] === 'contentInputField') {
@@ -1570,7 +1597,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
     const text = mouse.cursorItem.data[1];
     let cursorIndex = -1;
     const cursorSelection = mouse.cursorItem.selection.sort();
-    console.log('evt.keyCode', evt.keyCode);
+
     switch (evt.keyCode) {
       case 35:
         // End key
@@ -2060,11 +2087,22 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       }
     });
 
+    function checkKeyboardInput (evt) {
+      console.log('checkKeyboardInput ==> evt.keyCode', evt.keyCode);
+      if (evt.keyCode === 16) {
+        // Shift key
+        evt.preventDefault();
+        mouse.shiftPressed = !mouse.shiftPressed;
+      }
+    }
+
     canvas.addEventListener('click', checkClick);
     canvas.addEventListener('mousedown', activateMovement);
     canvas.addEventListener('mouseup', deactivateMovement);
     canvas.addEventListener('mouseout', deactivateMovement);
     canvas.addEventListener('wheel', checkWheel);
+    document.addEventListener('keydown', checkKeyboardInput);
+    document.addEventListener('keyup', checkKeyboardInput);
 
     // Get the right offset values after window resizing
     window.addEventListener('resize', function () {
