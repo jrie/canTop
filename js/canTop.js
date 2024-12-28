@@ -794,10 +794,52 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
     }
 
     const cantopWindow = getWindowById(canTopData.activeWindow);
-    console.log('mouse.controlPressed', mouse.controlPressed);
-    if (cantopWindow.contentHeight > cantopWindow.contentArea[3]) {
-      const scrollHeight = cantopWindow.contentArea[3] / 5;
-      cantopWindow.contentArea[5][1] += evt.deltaY > 0 ? scrollHeight : -scrollHeight;
+
+    if (mouse.shiftPressed && cantopWindow.contentWidth > cantopWindow.contentArea[4][2]) {
+      const scrollStep = cantopWindow.contentArea[1] / 5;
+      cantopWindow.contentArea[5][0] += evt.deltaY > 0 ? scrollStep : -scrollStep;
+
+      // Check if we have a scrollbar
+      let scrollBar = -1;
+      for (let index = 0; index < cantopWindow.contentItems.length; index++) {
+        // Select a scrollbar plug for animation which parent item parentIndex is -1 (the main window)
+        if (cantopWindow.contentItems[index][0] === 'windowScrollbarPlugX' && cantopWindow.contentItems[cantopWindow.contentItems[index][1]][1] === -1) {
+          scrollBar = index;
+          break;
+        }
+      }
+
+      if (cantopWindow.contentArea[5][0] < 0) {
+        cantopWindow.contentArea[5][0] = 0;
+      } else if (cantopWindow.contentArea[5][0] >= cantopWindow.contentWidth - cantopWindow.contentArea[4][2]) {
+        cantopWindow.contentArea[5][0] = cantopWindow.contentWidth - cantopWindow.contentArea[4][2];
+      }
+
+      if (scrollBar !== -1) {
+        let scrollProgress = 0;
+        if (cantopWindow.contentArea[5][0] !== 0) {
+          scrollProgress = cantopWindow.contentArea[5][0] / (cantopWindow.contentWidth - cantopWindow.contentArea[4][2]);
+        }
+
+        const itemBaseX = design.windowScrollbarPlugX[5];
+        const itemWidth = cantopWindow.contentBoundaries[scrollBar][4];
+        const scrollHeight = cantopWindow.contentArea[4][2] - (itemBaseX + itemWidth);
+
+        cantopWindow.contentBoundaries[scrollBar][0] = scrollHeight * scrollProgress;
+        cantopWindow.contentBoundaries[scrollBar][5] = (scrollHeight * scrollProgress) + itemBaseX + itemWidth;
+
+        if (cantopWindow.contentBoundaries[scrollBar][0] <= itemBaseX) {
+          cantopWindow.contentBoundaries[scrollBar][0] = itemBaseX;
+          cantopWindow.contentBoundaries[scrollBar][5] = cantopWindow.contentBoundaries[scrollBar][4] + itemBaseX + itemWidth;
+        }
+      }
+
+      return;
+    }
+
+    if (!mouse.shiftPressed && cantopWindow.contentHeight > cantopWindow.contentArea[3]) {
+      const scrollStep = cantopWindow.contentArea[3] / 5;
+      cantopWindow.contentArea[5][1] += evt.deltaY > 0 ? scrollStep : -scrollStep;
 
       // Check if we have a scrollbar
       let scrollBar = -1;
@@ -811,9 +853,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
       if (cantopWindow.contentArea[5][1] < 0) {
         cantopWindow.contentArea[5][1] = 0;
-      }
-
-      if (cantopWindow.contentArea[5][1] >= cantopWindow.contentHeight - cantopWindow.contentArea[4][3]) {
+      } else if (cantopWindow.contentArea[5][1] >= cantopWindow.contentHeight - cantopWindow.contentArea[4][3]) {
         cantopWindow.contentArea[5][1] = cantopWindow.contentHeight - cantopWindow.contentArea[4][3];
       }
 
