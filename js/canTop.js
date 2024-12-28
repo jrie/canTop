@@ -793,47 +793,46 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       return;
     }
 
-    const window = getWindowById(canTopData.activeWindow);
-    if (window.contentHeight > window.contentArea[3]) {
-      const scrollHeight = window.contentArea[3] / 5;
-      window.contentArea[5][1] += evt.deltaY > 0 ? scrollHeight : -scrollHeight;
+    const cantopWindow = getWindowById(canTopData.activeWindow);
+    console.log('mouse.controlPressed', mouse.controlPressed);
+    if (cantopWindow.contentHeight > cantopWindow.contentArea[3]) {
+      const scrollHeight = cantopWindow.contentArea[3] / 5;
+      cantopWindow.contentArea[5][1] += evt.deltaY > 0 ? scrollHeight : -scrollHeight;
 
       // Check if we have a scrollbar
-      let verticalScrollbarIndex = -1;
-      for (let index = 0; index < window.contentItems.length; index++) {
+      let scrollBar = -1;
+      for (let index = 0; index < cantopWindow.contentItems.length; index++) {
         // Select a scrollbar plug for animation which parent item parentIndex is -1 (the main window)
-        if (window.contentItems[index][0] === 'windowScrollbarPlugY') {
-          if (window.contentItems[window.contentItems[index][1]][1] === -1) {
-            verticalScrollbarIndex = index;
-            break;
-          }
+        if (cantopWindow.contentItems[index][0] === 'windowScrollbarPlugY' && cantopWindow.contentItems[cantopWindow.contentItems[index][1]][1] === -1) {
+          scrollBar = index;
+          break;
         }
       }
 
-      if (window.contentArea[5][1] < 0) {
-        window.contentArea[5][1] = 0;
+      if (cantopWindow.contentArea[5][1] < 0) {
+        cantopWindow.contentArea[5][1] = 0;
       }
 
-      if (window.contentArea[5][1] >= window.contentHeight - window.contentArea[4][3]) {
-        window.contentArea[5][1] = window.contentHeight - window.contentArea[4][3];
+      if (cantopWindow.contentArea[5][1] >= cantopWindow.contentHeight - cantopWindow.contentArea[4][3]) {
+        cantopWindow.contentArea[5][1] = cantopWindow.contentHeight - cantopWindow.contentArea[4][3];
       }
 
-      if (verticalScrollbarIndex !== -1) {
+      if (scrollBar !== -1) {
         let scrollProgress = 0;
-        if (window.contentArea[5][1] !== 0) {
-          scrollProgress = window.contentArea[5][1] / (window.contentHeight - window.contentArea[4][3]);
+        if (cantopWindow.contentArea[5][1] !== 0) {
+          scrollProgress = cantopWindow.contentArea[5][1] / (cantopWindow.contentHeight - cantopWindow.contentArea[4][3]);
         }
 
         const itemBaseY = design.windowScrollbarPlugY[5];
-        const itemHeight = window.contentBoundaries[verticalScrollbarIndex][3];
-        const scrollHeight = window.contentArea[4][3] - (itemBaseY + itemHeight);
+        const itemHeight = cantopWindow.contentBoundaries[scrollBar][3];
+        const scrollHeight = cantopWindow.contentArea[4][3] - (itemBaseY + itemHeight);
 
-        window.contentBoundaries[verticalScrollbarIndex][1] = scrollHeight * scrollProgress;
-        window.contentBoundaries[verticalScrollbarIndex][5] = (scrollHeight * scrollProgress) + itemBaseY + itemHeight;
+        cantopWindow.contentBoundaries[scrollBar][1] = scrollHeight * scrollProgress;
+        cantopWindow.contentBoundaries[scrollBar][5] = (scrollHeight * scrollProgress) + itemBaseY + itemHeight;
 
-        if (window.contentBoundaries[verticalScrollbarIndex][1] <= itemBaseY) {
-          window.contentBoundaries[verticalScrollbarIndex][1] = itemBaseY;
-          window.contentBoundaries[verticalScrollbarIndex][5] = window.contentBoundaries[verticalScrollbarIndex][3] + itemBaseY + itemHeight;
+        if (cantopWindow.contentBoundaries[scrollBar][1] <= itemBaseY) {
+          cantopWindow.contentBoundaries[scrollBar][1] = itemBaseY;
+          cantopWindow.contentBoundaries[scrollBar][5] = cantopWindow.contentBoundaries[scrollBar][3] + itemBaseY + itemHeight;
         }
       }
     }
@@ -2090,10 +2089,19 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
     function checkKeyboardInput (evt) {
       console.log('checkKeyboardInput ==> evt.keyCode', evt.keyCode);
-      if (evt.keyCode === 16) {
-        // Shift key
-        evt.preventDefault();
-        mouse.shiftPressed = !mouse.shiftPressed;
+      switch (evt.keyCode) {
+        case 16:
+          // Shift key
+          evt.preventDefault();
+          mouse.shiftPressed = !mouse.shiftPressed;
+          break;
+        case 17:
+          evt.preventDefault();
+          // Control key
+          mouse.controlPressed = !mouse.controlPressed;
+          break;
+        default:
+          break;
       }
     }
 
