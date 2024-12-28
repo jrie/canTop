@@ -1445,8 +1445,6 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
   // Size window content area content according to ruleset
   function sizeWindowContent (windowItem, width, height) {
     // General variables
-    let contentItem = [];
-    let designItem = [];
     let itemX = 0;
     let itemY = 0;
     let itemWidth = 0;
@@ -1457,103 +1455,92 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
     let offsetY = 0;
     let spaceX = windowItem.contentArea[2];
     let spaceY = windowItem.contentArea[3];
-    let parent = -1;
-
-    let designBoundaries = [];
 
     for (let index = 0; index < windowItem.contentItems.length; index++) {
-      contentItem = windowItem.contentItems[index];
-      designItem = design[contentItem[0]];
+      const contentItem = windowItem.contentItems[index];
+      const designItem = design[contentItem[0]];
 
-      parent = contentItem[1];
-      designBoundaries = designItem[designItem.length - 1];
+      const parent = contentItem[1];
+      const designBoundaries = designItem[designItem.length - 1];
 
       // Define the height of the element based on the fillstyle
       // In case there is no parent set, deduct the available space of the content area
-      if (contentItem[3] === 'fillY') {
-        itemWidth = designItem[6][2] - offsetX;
-        itemHeight = spaceY - offsetY;
-
-        if (parent === -1) {
-          if (designItem[4] < 0) {
+      switch (contentItem[3]) {
+        case 'fillY':
+          itemWidth = designItem[6][2] - offsetX;
+          itemHeight = spaceY - offsetY;
+          if (parent === -1 && designItem[4] < 0) {
             spaceX -= itemWidth + 1;
           }
-        }
-      } else if (contentItem[3] === 'fillX') {
-        itemWidth = spaceX - offsetX;
-        itemHeight = designItem[6][3] - offsetY;
+          break;
+        case 'fillX':
+          itemWidth = spaceX - offsetX;
+          itemHeight = designItem[6][3] - offsetY;
 
-        if (parent === -1) {
-          if (designItem[5] < 0) {
+          if (parent === -1 && designItem[5] < 0) {
             spaceY -= itemHeight + 1;
           }
-        }
-      } else if (contentItem[3] === 'pos') {
-        itemWidth = windowItem.contentBoundaries[index][2];
-        itemHeight = windowItem.contentBoundaries[index][3];
-      } else {
-        itemWidth = designBoundaries[2];
-        itemHeight = designBoundaries[3];
+          break;
+        case 'pos':
+          itemWidth = windowItem.contentBoundaries[index][2];
+          itemHeight = windowItem.contentBoundaries[index][3];
+          break;
+        default:
+          itemWidth = designBoundaries[2];
+          itemHeight = designBoundaries[3];
+          break;
       }
 
       // Prepare the item X and Y coordinate
       if (parent === -1) {
-        if (contentItem[2] === 'x') {
-          if (designItem[4] < 0) {
-            itemX = windowItem.contentArea[2] + designItem[4] + offsetX;
-          } else {
-            itemX = designItem[4] + offsetX;
-          }
-          itemY = offsetY;
-        } else if (contentItem[2] === 'y') {
-          itemX = offsetX;
-          if (designItem[5] < 0) {
-            itemY = windowItem.contentArea[3] + designItem[5] + offsetY;
-          } else {
-            itemY = designItem[5] + offsetY;
-          }
-        } else if (contentItem[2] === 'both') {
-          if (contentItem[3] === 'pos') {
-            itemX = windowItem.contentBoundaries[index][0];
-            itemY = windowItem.contentBoundaries[index][1];
-          } else {
-            if (designItem[4] < 0) {
-              itemX = windowItem.contentArea[2] + designItem[4];
+        switch (contentItem[2]) {
+          case 'x':
+            itemX = designItem[4] < 0 ? windowItem.contentArea[2] + designItem[4] + offsetX : designItem[4] + offsetX;
+            itemY = offsetY;
+            break;
+          case 'y':
+            itemY = designItem[5] < 0 ? windowItem.contentArea[3] + designItem[5] + offsetY : designItem[5] + offsetY;
+            itemX = offsetX;
+            break;
+          case 'both':
+            if (contentItem[3] === 'pos') {
+              itemX = windowItem.contentBoundaries[index][0];
+              itemY = windowItem.contentBoundaries[index][1];
             } else {
-              itemX = designItem[4];
+              itemX = designItem[4] < 0 ? windowItem.contentArea[2] + designItem[4] : designItem[4];
+              itemY = designItem[5] < 0 ? windowItem.contentArea[3] + designItem[5] : designItem[5];
             }
+            break;
+        }
 
-            if (designItem[5] < 0) {
-              itemY = windowItem.contentArea[3] + designItem[5];
-            } else {
-              itemX = designItem[5];
+        switch (contentItem[3]) {
+          case 'fillY':
+            if (designItem[4] >= 0) {
+              offsetX += itemWidth + 1;
             }
-          }
+            break;
+          case 'fillX':
+            if (designItem[5] >= 0) {
+              offsetY += itemHeight + 1;
+            }
+            break;
         }
       } else {
-        if (contentItem[2] === 'x') {
-          itemX = windowItem.contentBoundaries[parent][0] + designItem[4];
-          itemY = windowItem.contentBoundaries[parent][1];
-        } else if (contentItem[2] === 'y') {
-          itemX = windowItem.contentBoundaries[parent][0];
-          itemY = windowItem.contentBoundaries[parent][1] + designItem[5];
-        } else if (contentItem[2] === 'both') {
-          itemX = windowItem.contentBoundaries[parent][0] + designItem[4];
-          itemY = windowItem.contentBoundaries[parent][1] + designItem[5];
-        }
-      }
-
-      if (contentItem[3] === 'fillY') {
-        if (parent === -1) {
-          if (designItem[4] >= 0) {
-            offsetX += itemWidth + 1;
-          }
-        }
-      } else if (contentItem[3] === 'fillX') {
-        if (parent === -1) {
-          if (designItem[5] >= 0) {
-            offsetY += itemHeight + 1;
-          }
+        switch (contentItem[2]) {
+          case 'x':
+            itemX = windowItem.contentBoundaries[parent][0] + designItem[4];
+            itemY = windowItem.contentBoundaries[parent][1];
+            break;
+          case 'y':
+            itemX = windowItem.contentBoundaries[parent][0];
+            itemY = windowItem.contentBoundaries[parent][1] + designItem[5];
+            break;
+          case 'both':
+            itemX = windowItem.contentBoundaries[parent][0] + designItem[4];
+            itemY = windowItem.contentBoundaries[parent][1] + designItem[5];
+            break;
+          default:
+            break;
         }
       }
 
