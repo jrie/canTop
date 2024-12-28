@@ -461,14 +461,6 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
   const gridStart = [0, 0];
   const gridEnd = [canvas.width, canvas.height];
 
-  // Settings
-
-  // Generally used for drawing procedures
-  let stepX = 0;
-  let stepY = 0;
-  let drawingCords = [];
-  let drawingSteps = 0;
-
   // Helper function to generate gradients
   let background;
   let stepSize = 0.0;
@@ -713,8 +705,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
   }
 
   function drawGrid () {
-    stepX = 0;
-    stepY = gridY;
+    let stepX = 0;
+    let stepY = gridY;
 
     dc.lineWidth = 0.6;
     dc.strokeStyle = 'rgba(255, 255, 255, 0.1)';
@@ -755,8 +747,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
         break;
     }
 
-    drawingCords = activeMouse[4];
-    drawingSteps = drawingCords.length;
+    const drawingCords = activeMouse[4];
 
     dc.fillStyle = activeMouse[0];
     dc.strokeStyle = activeMouse[1];
@@ -765,23 +756,26 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
     dc.moveTo(mouse.x, mouse.y);
     dc.beginPath();
 
-    if (activeMouse[3] === 'line') {
-      dc.lineWidth = 2;
-      for (let index = 0; index < drawingSteps; index += 2) {
-        dc.lineTo(mouse.x + drawingCords[index] - mouse.offsetX, mouse.y + drawingCords[index + 1] - mouse.offsetY);
-      }
+    switch (activeMouse[3]) {
+      case 'line':
+        dc.lineWidth = 2;
+        for (let index = 0; index < drawingCords.length; index += 2) {
+          dc.lineTo(mouse.x + drawingCords[index] - mouse.offsetX, mouse.y + drawingCords[index + 1] - mouse.offsetY);
+        }
 
-      dc.closePath();
-      dc.stroke();
-      dc.fill();
-    } else if (activeMouse[3] === 'stroke') {
-      dc.lineWidth = 1;
-      for (let index = 0; index < drawingSteps; index += 2) {
-        dc.lineTo(mouse.x + drawingCords[index] - mouse.offsetX, mouse.y + drawingCords[index + 1] - mouse.offsetY);
-      }
+        dc.closePath();
+        dc.stroke();
+        dc.fill();
+        break;
+      case 'stroke':
+        dc.lineWidth = 1;
+        for (let index = 0; index < drawingCords.length; index += 2) {
+          dc.lineTo(mouse.x + drawingCords[index] - mouse.offsetX, mouse.y + drawingCords[index + 1] - mouse.offsetY);
+        }
 
-      dc.closePath();
-      dc.stroke();
+        dc.closePath();
+        dc.stroke();
+        break;
     }
 
     dc.strokeStyle = '#000';
