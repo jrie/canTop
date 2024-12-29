@@ -125,22 +125,12 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
   function drawQueueItem (queueIndex) {
     const item = canTopData.renderQueue[queueIndex];
-    const drawingCount = item.drawingItems.length;
-    dc.font = design.font;
 
     let index = 0;
-    let drawingDesign = [];
-    let drawingCoords = [];
-    let posX = 0;
-    let posY = 0;
-    let sizeY = 0;
-    let dynamicCoords = [0, 0];
-
-    while (index < drawingCount) {
-      drawingDesign = design[item.drawingItems[index]];
-      drawingCoords = item.drawData[index][1];
-
-      sizeY = item.drawData[index][2][3];
+    for (const drawingItemName of item.drawingItems) {
+      const drawingDesign = design[drawingItemName];
+      const drawingCoords = item.drawData[index][1];
+      const sizeY = item.drawData[index][2][3];
 
       for (let drawingIndex = 0; drawingIndex < drawingCoords.length; drawingIndex++) {
         // Generarte the fill style
@@ -157,9 +147,9 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             break;
         }
 
-        dynamicCoords = getDynamicOffset(drawingDesign, item);
-        posX = dynamicCoords[0];
-        posY = dynamicCoords[1];
+        const dynamicCoords = getDynamicOffset(drawingDesign, item);
+        const posX = dynamicCoords[0];
+        const posY = dynamicCoords[1];
 
         // Actual drawing
         const linePoints = drawingCoords[drawingIndex];
@@ -209,7 +199,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
       // If we have a item containing more information, we draw those hear
       // Add the title to a window
-      if (item.drawingItems[index] === 'windowTitleBar') {
+      if (drawingItemName === 'windowTitleBar') {
         if (canTopData.activeWindow === item.id) {
           dc.fillStyle = drawingDesign[2][0];
         } else {
@@ -221,7 +211,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       }
 
       // Add the count of items in this window
-      if (item.drawingItems[index] === 'windowStatusBar') {
+      if (drawingItemName === 'windowStatusBar') {
         dc.fillStyle = drawingDesign[2][1];
         dc.textAlign = 'left';
         dc.fillText(item.items.length + ' item(s)', item.x + 5, item.y + item.height - 5);
