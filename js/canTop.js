@@ -1784,7 +1784,6 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
     const items = windowItem.items;
 
     let index = 0;
-    let subIndex = 0;
 
     let offsetX = contentArea[5][0] - contentArea[4][0];
     let offsetY = contentArea[5][1] - contentArea[4][1];
@@ -1822,7 +1821,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
         }
       }
 
-      for (subIndex = 0; subIndex < designItem[0].length; subIndex++) {
+      for (let subIndex = 0; subIndex < designItem[0].length; subIndex++) {
         const drawingMethod = designItem[0][subIndex];
         const fillMethod = designItem[1][subIndex];
         const colors = designItem[2][subIndex];
