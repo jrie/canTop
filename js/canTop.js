@@ -932,13 +932,14 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       while (hotSpot--) {
         const drawDataSize = activeItem.drawData.length;
         const drawingDesign = design[activeItem.hotSpots[hotSpot]];
-        const drawingCoords = activeItem.drawData[index][1];
 
         for (index = 0; index < drawDataSize; index++) {
           if (activeItem.hotSpots[hotSpot] === activeItem.drawData[index][0]) {
             break;
           }
         }
+
+        const drawingCoords = activeItem.drawData[index][1];
 
         dc.beginPath();
 
