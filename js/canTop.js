@@ -1041,8 +1041,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
               newWidth = activeItem.oldWidth;
               newHeight = activeItem.oldHeight;
             }
+
             resizeWindowItem(activeItem, newWidth, newHeight);
-            sizeWindowContent(activeItem, newWidth, newHeight);
 
             // Update the mouse cursor position and cursorItem itself
             if (mouse.cursorItem !== null) {
