@@ -1784,34 +1784,19 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
     const items = windowItem.items;
 
     let index = 0;
-    let contentItem = [];
-    let designItem = [];
-    let itemBoundaries = [];
     let subIndex = 0;
-
-    let fillMethod = '';
-    let drawType = [];
-    let drawingMethod = '';
-    let colors = [];
-    let posX = 0;
-    let posY = 0;
-    let coords = [];
-    let sizeX = 0;
-    let sizeY = 0;
-    let useStroke = false;
 
     let offsetX = contentArea[5][0] - contentArea[4][0];
     let offsetY = contentArea[5][1] - contentArea[4][1];
     let finalOffsetX = 0;
     let finalOffsetY = 0;
 
-    let isNonMoveAble = false;
-    let useClip = false;
-
     for (index = 0; index < contentItems.length; index++) {
-      contentItem = contentItems[index];
-      designItem = design[contentItem[0]];
-      itemBoundaries = boundaries[index];
+      const contentItem = contentItems[index];
+      const designItem = design[contentItem[0]];
+      const itemBoundaries = boundaries[index];
+      let isNonMoveAble = false;
+      let useClip = false;
 
       // Check if the item is scrollable
       if (contentItem[4] === false) {
@@ -1838,16 +1823,16 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       }
 
       for (subIndex = 0; subIndex < designItem[0].length; subIndex++) {
-        drawingMethod = designItem[0][subIndex];
-        fillMethod = designItem[1][subIndex];
-        colors = designItem[2][subIndex];
-        coords = designItem[3][subIndex];
-        posX = contentArea[0] + itemBoundaries[0];
-        posY = itemBoundaries[1];
+        const drawingMethod = designItem[0][subIndex];
+        const fillMethod = designItem[1][subIndex];
+        const colors = designItem[2][subIndex];
+        const coords = designItem[3][subIndex];
+        let posX = contentArea[0] + itemBoundaries[0];
+        let posY = itemBoundaries[1];
 
-        sizeX = itemBoundaries[2];
-        sizeY = itemBoundaries[3];
-        useStroke = true;
+        let sizeX = itemBoundaries[2];
+        let sizeY = itemBoundaries[3];
+        let useStroke = true;
         if (coords[0] > 0) {
           posX += coords[0];
           sizeX -= (coords[0] * 2);
@@ -1872,7 +1857,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             useClip = true;
           }
         }
-        drawType = fillMethod.split('_', 2);
+
+        const drawType = fillMethod.split('_', 2);
         if (drawType[0] === 'solid') {
           dc.fillStyle = colors[0];
         } else if (drawType[0] === 'gradient') {
@@ -1893,7 +1879,6 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       }
     }
 
-    let currentItem = [];
     dc.save();
     dc.beginPath();
     dc.rect(contentArea[0] + contentArea[4][0], contentArea[1] + contentArea[4][1], contentArea[4][2] - contentArea[4][0], contentArea[4][3] - contentArea[4][1]);
@@ -1903,20 +1888,13 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       offsetX = contentArea[0] + 3 + contentArea[4][0];
       offsetY = contentArea[1] + 12 + contentArea[4][1];
       const mouseY = mouse.y - (mouse.offsetY + 6);
-      // Clip the drawable area by the dimensions of the content area
-      let measurementItem = [];
-      let calculatedWidth = 0;
       let hasDrawnSelection = false;
-
       windowItem.contentWidth = 0;
 
-      for (let item = 0; item < items.length; item++) {
-        currentItem = items[item];
-
+      for (const currentItem of items) {
         dc.textAlign = 'left';
         if (offsetY >= (contentArea[1] + contentArea[5][1] - 18)) {
-          measurementItem = currentItem;
-          calculatedWidth = dc.measureText(measurementItem[1]).width + dc.measureText(measurementItem[2][0][3]).width + dc.measureText(measurementItem[2][1][3]).width + 135;
+          const calculatedWidth = dc.measureText(currentItem[1]).width + dc.measureText(currentItem[2][0][3]).width + dc.measureText(currentItem[2][1][3]).width + 135;
           if (windowItem.contentWidth < calculatedWidth) {
             windowItem.contentWidth = calculatedWidth;
           }
