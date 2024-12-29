@@ -230,7 +230,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
     windowItem.drawingItems = ['windowTitleBar', 'windowContent', 'windowStatusBar', 'windowResize', 'windowClose', 'windowMaximize', 'windowMinimize'];
     windowItem.hotSpots = ['windowTitleBar', 'windowContent', 'windowStatusBar', 'windowResize', 'windowClose', 'windowMaximize', 'windowMinimize'];
     if (mode === 'data') {
-      windowItem.items = generateDummyData(parseInt(Math.random() * 50) + 25);
+      windowItem.items = generateDummyData(parseInt(Math.random() * 50) + 5);
     } else {
       windowItem.items = [];
     }
@@ -284,7 +284,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
     windowItem.contentArea = [windowItem.x, windowItem.y + windowItem.hotSpotOffsetY[0], windowItem.width, windowItem.drawData[1][2][3]];
 
     // itemDesign, parent, positioningOn, fill-axis, scrollAble, action, datafield, datatype, initialValue, datastep
-    windowItem.contentItems = [['windowScrollbarY', -1, 'x', 'fillY', false, false, false], ['windowScrollbarPlugY', 0, 'both', false, 'scrollY', false], ['windowScrollbarX', -1, 'y', 'fillX', false, false, false], ['windowScrollbarPlugX', 2, 'both', false, 'scrollX', false]];
+    windowItem.contentItems = [['windowScrollbarY', -1, 'x', 'fillY', false, false, false], ['windowScrollbarPlugY', 0, 'both', false, 'scrollY', false, 0.0], ['windowScrollbarX', -1, 'y', 'fillX', false, false, false], ['windowScrollbarPlugX', 2, 'both', false, 'scrollX', false, 0.0]];
     windowItem.contentBoundaries = [];
     windowItem.contentData = [];
     windowItem.contentActions = [];
@@ -820,6 +820,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
           cantopWindow.contentBoundaries[scrollBar][0] = itemBaseX;
           cantopWindow.contentBoundaries[scrollBar][5] = cantopWindow.contentBoundaries[scrollBar][4] + itemBaseX + itemWidth;
         }
+
+        cantopWindow.contentItems[scrollBar][6] = scrollProgress;
       }
 
       return;
@@ -862,6 +864,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
           cantopWindow.contentBoundaries[scrollBar][1] = itemBaseY;
           cantopWindow.contentBoundaries[scrollBar][5] = cantopWindow.contentBoundaries[scrollBar][3] + itemBaseY + itemHeight;
         }
+
+        cantopWindow.contentItems[scrollBar][6] = scrollProgress;
       }
     }
   }
@@ -1043,6 +1047,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             }
 
             resizeWindowItem(activeItem, newWidth, newHeight);
+            sizeWindowContent(activeItem, newWidth, newHeight);
 
             // Update the mouse cursor position and cursorItem itself
             if (mouse.cursorItem !== null) {
@@ -1277,7 +1282,10 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             } else {
               parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = itemBaseY;
             }
+
+            mouse.activeItem[6] = scrollPercentage;
           }
+
           break;
         case 'windowScrollbarPlugX':
           if (mouse.activeItem.action === 'scrollX') {
@@ -1318,6 +1326,8 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             } else {
               parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] = itemBaseX;
             }
+
+            mouse.activeItem[6] = scrollPercentage;
           }
           break;
       }
@@ -1466,6 +1476,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
           itemWidth = windowItem.contentBoundaries[index][2];
           itemHeight = windowItem.contentBoundaries[index][3];
           break;
+        case 'both':
         default:
           itemWidth = designBoundaries[2];
           itemHeight = designBoundaries[3];
@@ -1529,7 +1540,46 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       windowItem.contentBoundaries[index] = [itemX, itemY, itemWidth, itemHeight, itemX + itemWidth, itemY + itemHeight];
     }
 
-    windowItem.contentArea = [windowItem.x, windowItem.y + windowItem.hotSpotOffsetY[0], width, windowItem.drawData[1][2][3] - windowItem.hotSpotOffsetY[0], [offsetX, offsetY, spaceX, spaceY], [0, 0]];
+    // windowItem.contentArea = [windowItem.x, windowItem.y + windowItem.hotSpotOffsetY[0], width, windowItem.drawData[1][2][3] - windowItem.hotSpotOffsetY[0], [offsetX, offsetY, spaceX, spaceY], [0, 0]];
+    windowItem.contentArea = [windowItem.x, windowItem.y + windowItem.hotSpotOffsetY[0], width, windowItem.drawData[1][2][3] - windowItem.hotSpotOffsetY[0], [offsetX, offsetY, spaceX, spaceY], windowItem.contentArea[5]];
+
+    // Restore scrollbar positions after contentarea resize
+    let indexScrollPlugX = -1;
+    let indexScrollPlugY = -1;
+
+    for (let index = 0; index < windowItem.contentItems.length; ++index) {
+      switch (windowItem.contentItems[index][0]) {
+        case 'windowScrollbarPlugX':
+          indexScrollPlugX = index;
+          break;
+        case 'windowScrollbarPlugY':
+          indexScrollPlugY = index;
+          break;
+        default:
+          break;
+      }
+    }
+
+    const item = windowItem.contentItems[indexScrollPlugY];
+    console.log('windowItem.contentBoundaries[indexScrollPlugY]', windowItem.contentBoundaries[indexScrollPlugY]);
+      //windowItem.contentBoundaries[indexScrollPlugY][1] = windowItem.contentBoundaries[indexScrollPlugY][2] + windowItem.contentBoundaries[indexScrollPlugY][5];
+      //windowItem.contentItems[indexScrollPlugY][6] = 0;
+    windowItem.contentBoundaries[indexScrollPlugY][1] = ((windowItem.contentArea[3] - windowItem.contentBoundaries[indexScrollPlugY][5]) * item[6]) + windowItem.contentBoundaries[indexScrollPlugY][1];
+
+    if (windowItem.contentArea[3] >= windowItem.contentHeight) {
+      windowItem.contentArea[5][1] = 0;
+      //windowItem.contentBoundaries[indexScrollPlugY][1] = windowItem.contentBoundaries[indexScrollPlugY][5] - windowItem.contentBoundaries[indexScrollPlugY][3];
+    } else if (windowItem.contentArea[3] <= windowItem.contentHeight) {
+      windowItem.contentArea[5][1] = windowItem.contentHeight - windowItem.contentArea[3];
+      //windowItem.contentBoundaries[indexScrollPlugY][1] = (windowItem.contentArea[3] - windowItem.contentBoundaries[indexScrollPlugY][3] - windowItem.contentBoundaries[indexScrollPlugY][5]) * 1;
+    }
+    //windowItem.contentBoundaries[indexScrollPlugY][1] = ((windowItem.contentArea[3] - windowItem.contentBoundaries[indexScrollPlugY][5]) * item[6]) + windowItem.contentBoundaries[indexScrollPlugY][1];
+
+    // console.log('windowItem.contentItems[indexScrollPlugY]', windowItem.contentItems[indexScrollPlugY]);
+    // console.log('windowItem.contentBoundaries[indexScrollPlugY]', windowItem.contentBoundaries[indexScrollPlugY]);
+    // console.log('windowItem.contentArea[5][0]', windowItem.contentArea[5][0]);
+    // windowItem.contentArea[5][1] = windowItem.contentArea[3] * item[6];
+    // console.log('windowItem.contentBoundaries', windowItem.contentBoundaries);
   }
 
   function handleInputFieldInput (evt) {
