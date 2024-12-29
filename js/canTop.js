@@ -894,21 +894,16 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
     const mX = mouse.x - mouse.offsetX;
     const mY = mouse.y - mouse.offsetY;
 
-    let item = {};
-    let hotSpot = 0;
     let activeItem = {};
     let zOrderIndex = -1;
-
-    let index = 0;
     let pressedItem = false;
 
     // Reset the active selection on click and select later
     canTopData.activeWindow = null;
+    let index = canTopData.renderQueueSize;
 
     // Check window clicks
-    index = canTopData.renderQueueSize;
-    while (index--) {
-      item = canTopData.renderQueue[index];
+    for (const item of canTopData.renderQueue) {
       if (mX >= item.x && mX <= (item.x + item.width) && mY >= item.y && mY <= (item.y + item.height)) {
         if (zOrderIndex < item.zOrder) {
           activeItem = item;
@@ -931,18 +926,13 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       }
 
       // Check the hotspots of the active window
-      hotSpot = activeItem.hotSpots.length;
+      let hotSpot = activeItem.hotSpots.length;
       index = 0;
-
-      let drawingDesign = [];
-      let drawingCoords = [];
-      let posX = 0;
-      let posY = 0;
-      let dynamicCoords = [0, 0];
 
       while (hotSpot--) {
         const drawDataSize = activeItem.drawData.length;
-        drawingDesign = design[activeItem.hotSpots[hotSpot]];
+        const drawingDesign = design[activeItem.hotSpots[hotSpot]];
+        const drawingCoords = activeItem.drawData[index][1];
 
         for (index = 0; index < drawDataSize; index++) {
           if (activeItem.hotSpots[hotSpot] === activeItem.drawData[index][0]) {
@@ -950,12 +940,12 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
           }
         }
 
-        drawingCoords = activeItem.drawData[index][1];
         dc.beginPath();
+
         for (let drawingIndex = 0; drawingIndex < drawingDesign[3].length; drawingIndex++) {
-          dynamicCoords = getDynamicOffset(drawingDesign, activeItem);
-          posX = dynamicCoords[0];
-          posY = dynamicCoords[1];
+          const dynamicCoords = getDynamicOffset(drawingDesign, activeItem);
+          const posX = dynamicCoords[0];
+          const posY = dynamicCoords[1];
 
           const linePoints = drawingCoords[drawingIndex];
           const drawingSteps = linePoints.length;
@@ -1138,20 +1128,22 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             }
             return;
           } else if (pressedItem === 'windowClose') {
-            for (let trap = 0; trap < canTopData.mouseTraps.length; trap++) {
-              if (canTopData.mouseTraps[trap][0] === activeItem.id) {
-                canTopData.mouseTraps.splice(trap, 1);
-                trap--;
+            if (mouse.moveInterval === null) {
+              for (let trap = 0; trap < canTopData.mouseTraps.length; trap++) {
+                if (canTopData.mouseTraps[trap][0] === activeItem.id) {
+                  canTopData.mouseTraps.splice(trap, 1);
+                  --trap;
+                }
               }
-            }
 
-            canTopData.renderQueue.splice(activeItem.zOrder);
-            canTopData.renderQueueSize--;
+              canTopData.renderQueue.splice(activeItem.zOrder);
+              --canTopData.renderQueueSize;
 
-            index = canTopData.renderQueueSize - 1;
-            if (index > 0) {
-              while (index--) {
-                canTopData.renderQueue[index].zOrder = index;
+              index = canTopData.renderQueueSize - 1;
+              if (index > 0) {
+                while (index--) {
+                  canTopData.renderQueue[index].zOrder = index;
+                }
               }
             }
 
@@ -1173,7 +1165,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
     index = canTopData.renderItems.length;
     while (index--) {
-      item = canTopData.renderItems[index];
+      const item = canTopData.renderItems[index];
       if (mX >= item.x && mX <= (item.x + item.width) && mY >= item.y && mY <= (item.y + item.height)) {
         if (mouse.clickCount > 1) {
           clearInterval(mouse.clickInternval);
