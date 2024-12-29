@@ -779,6 +779,10 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
     const cantopWindow = getWindowById(canTopData.activeWindow);
 
+    if ((mouse.x < cantopWindow.x || mouse.x > cantopWindow.x + cantopWindow.width) || (mouse.y < cantopWindow.y || mouse.y > cantopWindow.y + cantopWindow.height)) {
+      return;
+    }
+
     if (mouse.shiftPressed && cantopWindow.contentWidth > cantopWindow.contentArea[4][2]) {
       const scrollStep = cantopWindow.contentArea[1] / 5;
       cantopWindow.contentArea[5][0] += evt.deltaY > 0 ? scrollStep : -scrollStep;
