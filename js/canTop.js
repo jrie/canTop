@@ -1013,9 +1013,11 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
         mouse.clickInternval = null;
         // Double click counted
         console.log('in two mouseclicks');
+
         if (mouse.activeItem) {
           console.log('Pressed item: ' + activeItem.title + ' / ' + pressedItem);
         }
+
         mouse.clickCount = 0;
         return;
       } else {
@@ -1059,8 +1061,10 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             }
 
             return;
-          } else if (pressedItem === 'windowContent') {
+          } else if (pressedItem === 'windowContent' || pressedItem === 'windowScrollbarX' || pressedItem === 'windowScrollbarY') {
             const lockedItem = getLastItemIndex(activeItem);
+            console.log('lockedItem', lockedItem);
+
             // Clean any active cursor positioning on content click
             if (mouse.cursorItem !== null) {
               mouse.cursorItem = null;
@@ -1073,30 +1077,42 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
               document.removeEventListener('keydown', handleInputFieldInput);
               console.log('Pressed content item: ' + activeItem.title + ' / ' + lastItem[0]);
 
-              if (lastItem[0] === 'contentInputField') {
-                mouse.cursorItem = getItemInfoAtIndex(lastItem, activeItem, lockedItem);
-                const text = mouse.cursorItem.data[1];
-                let textWidth = 0;
-                let letterWidth = 0;
+              switch (lastItem[0]) {
+                case 'windowScrollbarPlugY':
+                case 'windowScrollbarPlugX':
+                  mouse.previousX = mouse.x;
+                  mouse.previousY = mouse.y;
+                  mouse.moveInterval = setInterval(realiseMouseMovement, mouse.movementSpeed);
+                  mouse.activeItem = getItemInfoAtIndex(lastItem, activeItem, lockedItem);
+                  break;
+                case 'contentInputField':
+                  mouse.cursorItem = getItemInfoAtIndex(lastItem, activeItem, lockedItem);
+                  const text = mouse.cursorItem.data[1];
+                  let textWidth = 0;
+                  let letterWidth = 0;
 
-                const mouseX = mouse.x - (mouse.offsetX + mouse.cursorItem.x);
-                let hasCursor = false;
+                  const mouseX = mouse.x - (mouse.offsetX + mouse.cursorItem.x);
+                  let hasCursor = false;
 
-                for (let letter = 0; letter < text.length; letter++) {
-                  letterWidth = dc.measureText(text.slice(0, letter)).width;
-                  if (mouseX <= letterWidth + 4) {
-                    mouse.cursorAt = [mouse.cursorItem.x + letterWidth + 3, mouse.cursorItem.y + 3, letter - 1];
-                    hasCursor = true;
-                    break;
+                  for (let letter = 0; letter < text.length; letter++) {
+                    letterWidth = dc.measureText(text.slice(0, letter)).width;
+                    if (mouseX <= letterWidth + 4) {
+                      mouse.cursorAt = [mouse.cursorItem.x + letterWidth + 3, mouse.cursorItem.y + 3, letter - 1];
+                      hasCursor = true;
+                      break;
+                    }
                   }
-                }
 
-                if (!hasCursor) {
-                  textWidth = dc.measureText(text).width;
-                  mouse.cursorAt = [mouse.cursorItem.x + 3 + textWidth, mouse.cursorItem.y + 3, text.length - 1];
-                }
+                  if (!hasCursor) {
+                    textWidth = dc.measureText(text).width;
+                    mouse.cursorAt = [mouse.cursorItem.x + 3 + textWidth, mouse.cursorItem.y + 3, text.length - 1];
+                  }
 
-                document.addEventListener('keydown', handleInputFieldInput);
+                  document.addEventListener('keydown', handleInputFieldInput);
+                  break;
+                default:
+                  mouse.activeItem = null;
+                  break;
               }
             }
             return;
@@ -1130,9 +1146,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
                   break;
               }
             }
-          }
-
-          if (pressedItem === 'windowResize') {
+          } else if (pressedItem === 'windowResize') {
             if (mouse.moveInterval === null) {
               mouse.previousX = mouse.x;
               mouse.previousY = mouse.y;
