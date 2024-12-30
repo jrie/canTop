@@ -876,6 +876,9 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
     if (mouse.clickInterval === null) {
       mouse.previousX = evt.clientX;
       mouse.previousY = evt.clientY;
+      mouse.shiftPressed = false;
+      mouse.controlPressed = false;
+      mouse.activeItem = null;
       mouse.clickInterval = setInterval(recognizeDoubleClick, mouse.doubleClickSpeed);
     }
 
@@ -1013,7 +1016,6 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
         if (mouse.activeItem) {
           console.log('Pressed item: ' + activeItem.title + ' / ' + pressedItem);
         }
-
         mouse.clickCount = 0;
         return;
       } else {
@@ -1112,6 +1114,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             return;
           } else if (pressedItem === 'windowContent') {
             const lockedItem = getLastItemIndex(activeItem);
+            console.log('lockedItem', lockedItem);
 
             if (lockedItem !== null) {
               const lastItem = activeItem.contentItems[lockedItem];
@@ -1259,31 +1262,31 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
             parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] -= mouse.previousY - mouse.y;
             parentWindow.contentBoundaries[mouse.activeItem.itemIndex][5] -= mouse.previousY - mouse.y;
-            let scrollPercentage = 0;
+            let scrollProgress = 0;
 
             if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] <= itemBaseY) {
               parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = itemBaseY;
               parentWindow.contentBoundaries[mouse.activeItem.itemIndex][5] = parentWindow.contentBoundaries[mouse.activeItem.itemIndex][3] + itemBaseY + itemHeight;
-              scrollPercentage = 0;
+              scrollProgress = 0;
             } else if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] >= scrollHeight) {
               parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = scrollHeight;
               parentWindow.contentBoundaries[mouse.activeItem.itemIndex][5] = scrollHeight + itemHeight + itemBaseY;
-              scrollPercentage = 1;
+              scrollProgress = 1;
             } else {
-              scrollPercentage = (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] - itemBaseY) / scrollHeight;
+              scrollProgress = (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] - itemBaseY) / scrollHeight;
             }
 
             // Maximum positive scroll in Y
             const contentHeight = parentWindow.contentHeight + parentWindow.contentArea[4][1];
             if (parentWindow.contentArea[5][1] <= contentHeight - parentWindow.contentArea[4][3]) {
-              parentWindow.contentArea[5][1] = (contentHeight - parentWindow.contentArea[4][3]) * scrollPercentage;
+              parentWindow.contentArea[5][1] = (contentHeight - parentWindow.contentArea[4][3]) * scrollProgress;
             } else if (parentWindow.contentArea[4][3] < contentHeight) {
               parentWindow.contentArea[5][1] = contentHeight - parentWindow.contentArea[4][3];
             } else {
               parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = itemBaseY;
             }
 
-            mouse.activeItem[6] = scrollPercentage;
+            parentWindow.contentItems[mouse.activeItem.itemIndex][6] = scrollProgress;
           }
 
           break;
@@ -1303,31 +1306,31 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
             parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] -= mouse.previousX - mouse.x;
             parentWindow.contentBoundaries[mouse.activeItem.itemIndex][4] -= mouse.previousX - mouse.x;
-            let scrollPercentage = 0;
+            let scrollProgress = 0;
 
             if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] <= itemBaseX) {
               parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] = itemBaseX;
               parentWindow.contentBoundaries[mouse.activeItem.itemIndex][4] = parentWindow.contentBoundaries[mouse.activeItem.itemIndex][2] + itemBaseX + itemWidth;
-              scrollPercentage = 0;
+              scrollProgress = 0;
             } else if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] >= scrollWidth) {
               parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] = scrollWidth;
               parentWindow.contentBoundaries[mouse.activeItem.itemIndex][4] = scrollWidth + itemWidth + itemBaseX;
-              scrollPercentage = 1;
+              scrollProgress = 1;
             } else {
-              scrollPercentage = (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] - itemBaseX) / scrollWidth;
+              scrollProgress = (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] - itemBaseX) / scrollWidth;
             }
 
             // Maximum positive scroll in X and scolling
             const contentWidth = parentWindow.contentWidth + parentWindow.contentArea[4][0];
             if (parentWindow.contentArea[5][0] <= contentWidth - parentWindow.contentArea[4][2]) {
-              parentWindow.contentArea[5][0] = (contentWidth - parentWindow.contentArea[4][2]) * scrollPercentage;
+              parentWindow.contentArea[5][0] = (contentWidth - parentWindow.contentArea[4][2]) * scrollProgress;
             } else if (parentWindow.contentArea[4][2] < contentWidth) {
               parentWindow.contentArea[5][0] = contentWidth - parentWindow.contentArea[4][2];
             } else {
               parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] = itemBaseX;
             }
 
-            mouse.activeItem[6] = scrollPercentage;
+            parentWindow.contentItems[mouse.activeItem.itemIndex][6] = scrollProgress;
           }
           break;
       }
@@ -1560,26 +1563,24 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       }
     }
 
-    const item = windowItem.contentItems[indexScrollPlugY];
-    console.log('windowItem.contentBoundaries[indexScrollPlugY]', windowItem.contentBoundaries[indexScrollPlugY]);
-      //windowItem.contentBoundaries[indexScrollPlugY][1] = windowItem.contentBoundaries[indexScrollPlugY][2] + windowItem.contentBoundaries[indexScrollPlugY][5];
-      //windowItem.contentItems[indexScrollPlugY][6] = 0;
-    windowItem.contentBoundaries[indexScrollPlugY][1] = ((windowItem.contentArea[3] - windowItem.contentBoundaries[indexScrollPlugY][5]) * item[6]) + windowItem.contentBoundaries[indexScrollPlugY][1];
+    if (indexScrollPlugY !== -1) {
+      const itemBaseY = design.windowScrollbarPlugY[5];
+      console.log(windowItem.contentItems[indexScrollPlugY][6]);
+      if (windowItem.contentArea[3] >= windowItem.contentHeight) {
+        windowItem.contentArea[5][1] = 0;
+      } else if (windowItem.contentArea[3] <= windowItem.contentHeight) {
+        windowItem.contentArea[5][1] = (windowItem.contentHeight - windowItem.contentArea[3]) * windowItem.contentItems[indexScrollPlugY][6];
+      }
 
-    if (windowItem.contentArea[3] >= windowItem.contentHeight) {
-      windowItem.contentArea[5][1] = 0;
-      //windowItem.contentBoundaries[indexScrollPlugY][1] = windowItem.contentBoundaries[indexScrollPlugY][5] - windowItem.contentBoundaries[indexScrollPlugY][3];
-    } else if (windowItem.contentArea[3] <= windowItem.contentHeight) {
-      windowItem.contentArea[5][1] = windowItem.contentHeight - windowItem.contentArea[3];
-      //windowItem.contentBoundaries[indexScrollPlugY][1] = (windowItem.contentArea[3] - windowItem.contentBoundaries[indexScrollPlugY][3] - windowItem.contentBoundaries[indexScrollPlugY][5]) * 1;
+      if (windowItem.contentItems[indexScrollPlugY][6] === 0 || windowItem.contentArea[5][1] === 0) {
+        windowItem.contentBoundaries[indexScrollPlugY][1] = itemBaseY;
+      } else if (windowItem.contentItems[indexScrollPlugY][6] === 1) {
+        windowItem.contentBoundaries[indexScrollPlugY][1] = (windowItem.contentArea[4][3] * windowItem.contentItems[indexScrollPlugY][6]) - windowItem.contentBoundaries[indexScrollPlugY][5];
+        windowItem.contentArea[5][1] += 15;
+      } else {
+        windowItem.contentBoundaries[indexScrollPlugY][1] = ((windowItem.contentArea[4][3]) * windowItem.contentItems[indexScrollPlugY][6]) - itemBaseY;
+      }
     }
-    //windowItem.contentBoundaries[indexScrollPlugY][1] = ((windowItem.contentArea[3] - windowItem.contentBoundaries[indexScrollPlugY][5]) * item[6]) + windowItem.contentBoundaries[indexScrollPlugY][1];
-
-    // console.log('windowItem.contentItems[indexScrollPlugY]', windowItem.contentItems[indexScrollPlugY]);
-    // console.log('windowItem.contentBoundaries[indexScrollPlugY]', windowItem.contentBoundaries[indexScrollPlugY]);
-    // console.log('windowItem.contentArea[5][0]', windowItem.contentArea[5][0]);
-    // windowItem.contentArea[5][1] = windowItem.contentArea[3] * item[6];
-    // console.log('windowItem.contentBoundaries', windowItem.contentBoundaries);
   }
 
   function handleInputFieldInput (evt) {
