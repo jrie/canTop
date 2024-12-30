@@ -1011,6 +1011,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       if (mouse.clickCount > 1) {
         clearInterval(mouse.clickInternval);
         mouse.clickInternval = null;
+
         // Double click counted
         console.log('in two mouseclicks');
 
@@ -1130,7 +1131,6 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             return;
           } else if (pressedItem === 'windowContent') {
             const lockedItem = getLastItemIndex(activeItem);
-            console.log('lockedItem', lockedItem);
 
             if (lockedItem !== null) {
               const lastItem = activeItem.contentItems[lockedItem];
@@ -1146,7 +1146,9 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
                   break;
               }
             }
-          } else if (pressedItem === 'windowResize') {
+          }
+
+          if (pressedItem === 'windowResize') {
             if (mouse.moveInterval === null) {
               mouse.previousX = mouse.x;
               mouse.previousY = mouse.y;
@@ -1395,7 +1397,35 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
       mouse.previousX = mouse.x;
       mouse.previousY = mouse.y;
+
       resizeWindowItem(mouse.activeItem, width, height);
+      sizeWindowContent(mouse.activeItem, width, height);
+
+      let cantopWindow = mouse.activeItem;
+      for (let index = 0; index < cantopWindow.contentItems.length; index++) {
+        // Select a scrollbar plug for animation which parent item parentIndex is -1 (the main window)
+        if (cantopWindow.contentItems[index][0] === 'windowScrollbarPlugY') {
+          let scrollProgress = cantopWindow.contentArea[5][1] / (cantopWindow.contentHeight - cantopWindow.contentArea[4][3]);
+          if (scrollProgress === 0) {
+            cantopWindow.contentBoundaries[index][1] = design.windowScrollbarPlugY[5];
+          } else if (scrollProgress === 1) {
+            cantopWindow.contentBoundaries[index][1] = cantopWindow.contentArea[4][3] - cantopWindow.contentBoundaries[index][3] - design.windowScrollbarPlugY[5];
+          } else {
+            cantopWindow.contentBoundaries[index][1] = (cantopWindow.contentArea[4][3] * scrollProgress) - design.windowScrollbarPlugY[5];
+          }
+
+          cantopWindow.contentBoundaries[index][5] = (cantopWindow.contentArea[4][3] * scrollProgress) + cantopWindow.contentBoundaries[index][3];
+        }
+        // TODO: Implement horizontal restore and in resizeWindowItem function
+        /*else if (cantopWindow.contentItems[index][0] === 'windowScrollbarPlugX') {
+          let scrollProgress = cantopWindow.contentArea[5][0] / (cantopWindow.contentWidth - cantopWindow.contentArea[4][1]);
+          cantopWindow.contentBoundaries[index][0] = (cantopWindow.contentArea[4][2] * scrollProgress) + design.windowScrollbarPlugX[5];
+          cantopWindow.contentBoundaries[index][5] = (cantopWindow.contentArea[4][2] * scrollProgress) + design.windowScrollbarPlugX[5] + cantopWindow.contentBoundaries[index][2];
+        }
+        */
+      }
+
+
     }
   }
 
@@ -1579,7 +1609,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
 
     if (indexScrollPlugY !== -1) {
       const itemBaseY = design.windowScrollbarPlugY[5];
-      console.log(windowItem.contentItems[indexScrollPlugY][6]);
+
       if (windowItem.contentArea[3] >= windowItem.contentHeight) {
         windowItem.contentArea[5][1] = 0;
       } else if (windowItem.contentArea[3] <= windowItem.contentHeight) {
