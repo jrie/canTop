@@ -1064,7 +1064,6 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             return;
           } else if (pressedItem === 'windowContent' || pressedItem === 'windowScrollbarX' || pressedItem === 'windowScrollbarY') {
             const lockedItem = getLastItemIndex(activeItem);
-            console.log('lockedItem', lockedItem);
 
             // Clean any active cursor positioning on content click
             if (mouse.cursorItem !== null) {
@@ -1078,6 +1077,13 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
               document.removeEventListener('keydown', handleInputFieldInput);
               console.log('Pressed content item: ' + activeItem.title + ' / ' + lastItem[0]);
 
+              let text = '';
+              let textWidth = 0;
+              let letterWidth = 0;
+              let hasCursor = false;
+
+              let mouseX = 0;
+
               switch (lastItem[0]) {
                 case 'windowScrollbarPlugY':
                 case 'windowScrollbarPlugX':
@@ -1088,12 +1094,11 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
                   break;
                 case 'contentInputField':
                   mouse.cursorItem = getItemInfoAtIndex(lastItem, activeItem, lockedItem);
-                  const text = mouse.cursorItem.data[1];
-                  let textWidth = 0;
-                  let letterWidth = 0;
-
-                  const mouseX = mouse.x - (mouse.offsetX + mouse.cursorItem.x);
-                  let hasCursor = false;
+                  text = mouse.cursorItem.data[1];
+                  textWidth = 0;
+                  letterWidth = 0;
+                  mouseX = mouse.x - (mouse.offsetX + mouse.cursorItem.x);
+                  hasCursor = false;
 
                   for (let letter = 0; letter < text.length; letter++) {
                     letterWidth = dc.measureText(text.slice(0, letter)).width;
@@ -1272,24 +1277,25 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
         case 'windowScrollbarPlugY':
           if (mouse.activeItem.action === 'scrollY') {
             const parentWindow = getWindowById(mouse.activeItem.parentWindow);
+            const item = parentWindow.contentBoundaries[mouse.activeItem.itemIndex];
             const itemBaseY = design[mouse.activeItem.type][5];
-            const itemHeight = parentWindow.contentBoundaries[mouse.activeItem.itemIndex][3];
-            const scrollHeight = parentWindow.contentArea[4][3] - (itemBaseY + itemHeight);
+            const itemHeight = item[3];
+            const scrollHeight = parentWindow.contentArea[4][3] - itemBaseY;
 
-            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] -= mouse.previousY - mouse.y;
-            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][5] -= mouse.previousY - mouse.y;
+            item[1] -= mouse.previousY - mouse.y;
+            item[5] -= mouse.previousY - mouse.y;
             let scrollProgress = 0;
 
-            if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] <= itemBaseY) {
-              parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = itemBaseY;
-              parentWindow.contentBoundaries[mouse.activeItem.itemIndex][5] = parentWindow.contentBoundaries[mouse.activeItem.itemIndex][3] + itemBaseY + itemHeight;
+            if (item[1] <= itemBaseY) {
+              item[1] = itemBaseY;
+              item[5] = item[3] + itemBaseY + itemHeight;
               scrollProgress = 0;
-            } else if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] >= scrollHeight) {
-              parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = scrollHeight;
-              parentWindow.contentBoundaries[mouse.activeItem.itemIndex][5] = scrollHeight + itemHeight + itemBaseY;
+            } else if (item[1] >= scrollHeight) {
+              item[1] = scrollHeight;
+              item[5] = scrollHeight + itemHeight + itemBaseY;
               scrollProgress = 1;
             } else {
-              scrollProgress = (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] - itemBaseY) / scrollHeight;
+              scrollProgress = item[1] / scrollHeight;
             }
 
             // Maximum positive scroll in Y
@@ -1299,7 +1305,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             } else if (parentWindow.contentArea[4][3] < contentHeight) {
               parentWindow.contentArea[5][1] = contentHeight - parentWindow.contentArea[4][3];
             } else {
-              parentWindow.contentBoundaries[mouse.activeItem.itemIndex][1] = itemBaseY;
+              item[1] = itemBaseY;
             }
 
             parentWindow.contentItems[mouse.activeItem.itemIndex][6] = scrollProgress;
@@ -1309,31 +1315,27 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
         case 'windowScrollbarPlugX':
           if (mouse.activeItem.action === 'scrollX') {
             const parentWindow = getWindowById(mouse.activeItem.parentWindow);
-            let itemBaseX = design[mouse.activeItem.type][4] + design[mouse.activeItem.type][6][2];
-            const itemWidth = parentWindow.contentBoundaries[mouse.activeItem.itemIndex][2];
+            const item = parentWindow.contentBoundaries[mouse.activeItem.itemIndex];
+            const itemBaseX = design[mouse.activeItem.type][4];
+            const itemWidth = item[2];
+            const scrollWidth = parentWindow.contentArea[4][2] - itemBaseX - itemWidth;
 
             // Dynamically get the boundary for scrolling
-            const scrollWidth = parentWindow.contentArea[4][2] - (itemBaseX);
-            if (parentWindow.contentArea[4][0] > 0) {
-              itemBaseX = design[mouse.activeItem.type][4] + design[mouse.activeItem.type][6][2];
-            } else {
-              itemBaseX = design[mouse.activeItem.type][4];
-            }
 
-            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] -= mouse.previousX - mouse.x;
-            parentWindow.contentBoundaries[mouse.activeItem.itemIndex][4] -= mouse.previousX - mouse.x;
+            item[0] -= mouse.previousX - mouse.x;
+            item[4] -= mouse.previousX - mouse.x;
             let scrollProgress = 0;
 
-            if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] <= itemBaseX) {
-              parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] = itemBaseX;
-              parentWindow.contentBoundaries[mouse.activeItem.itemIndex][4] = parentWindow.contentBoundaries[mouse.activeItem.itemIndex][2] + itemBaseX + itemWidth;
+            if (item[0] <= itemBaseX) {
+              item[0] = itemBaseX;
+              item[4] = item[2] + itemBaseX + itemWidth;
               scrollProgress = 0;
-            } else if (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] >= scrollWidth) {
-              parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] = scrollWidth;
-              parentWindow.contentBoundaries[mouse.activeItem.itemIndex][4] = scrollWidth + itemWidth + itemBaseX;
+            } else if (item[0] >= scrollWidth) {
+              item[0] = scrollWidth;
+              item[4] = scrollWidth + itemWidth + itemBaseX;
               scrollProgress = 1;
             } else {
-              scrollProgress = (parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] - itemBaseX) / scrollWidth;
+              scrollProgress = item[0] / scrollWidth;
             }
 
             // Maximum positive scroll in X and scolling
@@ -1343,7 +1345,7 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
             } else if (parentWindow.contentArea[4][2] < contentWidth) {
               parentWindow.contentArea[5][0] = contentWidth - parentWindow.contentArea[4][2];
             } else {
-              parentWindow.contentBoundaries[mouse.activeItem.itemIndex][0] = itemBaseX;
+              item[0] = itemBaseX;
             }
 
             parentWindow.contentItems[mouse.activeItem.itemIndex][6] = scrollProgress;
@@ -1401,31 +1403,38 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
       resizeWindowItem(mouse.activeItem, width, height);
       sizeWindowContent(mouse.activeItem, width, height);
 
-      let cantopWindow = mouse.activeItem;
+      const cantopWindow = mouse.activeItem;
       for (let index = 0; index < cantopWindow.contentItems.length; index++) {
         // Select a scrollbar plug for animation which parent item parentIndex is -1 (the main window)
-        if (cantopWindow.contentItems[index][0] === 'windowScrollbarPlugY') {
-          let scrollProgress = cantopWindow.contentArea[5][1] / (cantopWindow.contentHeight - cantopWindow.contentArea[4][3]);
+        const item = cantopWindow.contentItems[index];
+        if (item[0] === 'windowScrollbarPlugY') {
+          const scrollProgress = item[6];
+          const itemBaseY = design[item[0]][5];
+
           if (scrollProgress === 0) {
             cantopWindow.contentBoundaries[index][1] = design.windowScrollbarPlugY[5];
           } else if (scrollProgress === 1) {
             cantopWindow.contentBoundaries[index][1] = cantopWindow.contentArea[4][3] - cantopWindow.contentBoundaries[index][3] - design.windowScrollbarPlugY[5];
           } else {
-            cantopWindow.contentBoundaries[index][1] = (cantopWindow.contentArea[4][3] * scrollProgress) - design.windowScrollbarPlugY[5];
+            cantopWindow.contentBoundaries[index][1] = (cantopWindow.contentArea[4][3] - cantopWindow.contentBoundaries[index][3]) * scrollProgress;
           }
 
-          cantopWindow.contentBoundaries[index][5] = (cantopWindow.contentArea[4][3] * scrollProgress) + cantopWindow.contentBoundaries[index][3];
+          cantopWindow.contentBoundaries[index][5] = ((cantopWindow.contentArea[4][3] + cantopWindow.contentBoundaries[index][3] - itemBaseY) * scrollProgress) - itemBaseY;
+        } else if (item[0] === 'windowScrollbarPlugX') {
+          const scrollProgress = item[6];
+          const itemBaseX = design[item[0]][4];
+
+          if (scrollProgress === 0) {
+            cantopWindow.contentBoundaries[index][0] = design.windowScrollbarPlugX[4];
+          } else if (scrollProgress === 1) {
+            cantopWindow.contentBoundaries[index][0] = cantopWindow.contentArea[4][2] - cantopWindow.contentBoundaries[index][2] - design.windowScrollbarPlugX[4] - itemBaseX;
+          } else {
+            cantopWindow.contentBoundaries[index][0] = ((cantopWindow.contentArea[4][2] - cantopWindow.contentBoundaries[index][2] + itemBaseX) * scrollProgress) - itemBaseX;
+          }
+
+          cantopWindow.contentBoundaries[index][4] = ((cantopWindow.contentArea[4][2] + cantopWindow.contentBoundaries[index][2] - itemBaseX) * scrollProgress) - itemBaseX;
         }
-        // TODO: Implement horizontal restore and in resizeWindowItem function
-        /*else if (cantopWindow.contentItems[index][0] === 'windowScrollbarPlugX') {
-          let scrollProgress = cantopWindow.contentArea[5][0] / (cantopWindow.contentWidth - cantopWindow.contentArea[4][1]);
-          cantopWindow.contentBoundaries[index][0] = (cantopWindow.contentArea[4][2] * scrollProgress) + design.windowScrollbarPlugX[5];
-          cantopWindow.contentBoundaries[index][5] = (cantopWindow.contentArea[4][2] * scrollProgress) + design.windowScrollbarPlugX[5] + cantopWindow.contentBoundaries[index][2];
-        }
-        */
       }
-
-
     }
   }
 
@@ -1623,6 +1632,25 @@ function canTop (canvasItem, designName, useBackground, width, height, gridX, gr
         windowItem.contentArea[5][1] += 15;
       } else {
         windowItem.contentBoundaries[indexScrollPlugY][1] = ((windowItem.contentArea[4][3]) * windowItem.contentItems[indexScrollPlugY][6]) - itemBaseY;
+      }
+    }
+
+    if (indexScrollPlugX !== -1) {
+      const itemBaseX = design.windowScrollbarPlugX[4];
+
+      if (windowItem.contentArea[2] >= windowItem.contentWidth) {
+        windowItem.contentArea[5][0] = 0;
+      } else if (windowItem.contentArea[3] <= windowItem.contentWidth) {
+        windowItem.contentArea[5][0] = (windowItem.contentWidth - windowItem.contentArea[2]) * windowItem.contentItems[indexScrollPlugX][6];
+      }
+
+      if (windowItem.contentItems[indexScrollPlugX][6] === 0 || windowItem.contentArea[5][0] === 0) {
+        windowItem.contentBoundaries[indexScrollPlugX][0] = itemBaseX;
+      } else if (windowItem.contentItems[indexScrollPlugX][6] === 1) {
+        windowItem.contentBoundaries[indexScrollPlugX][0] = (windowItem.contentArea[4][2] * windowItem.contentItems[indexScrollPlugX][6]) - windowItem.contentBoundaries[indexScrollPlugX][5];
+        windowItem.contentArea[5][0] += 15;
+      } else {
+        windowItem.contentBoundaries[indexScrollPlugX][0] = ((windowItem.contentArea[4][2]) * windowItem.contentItems[indexScrollPlugX][6]) - itemBaseX;
       }
     }
   }
